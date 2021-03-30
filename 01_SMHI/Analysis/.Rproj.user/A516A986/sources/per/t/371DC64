@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591294390210.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "371DC64",
+    "lastKnownWriteTime" : 0,
+    "last_content_update" : 1591294390210,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "A94C6EC1",
+        "caption" : "AvaragesInhibition",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=AvaragesInhibition&cache_key=A94C6EC1",
+        "displayedObservations" : 24,
+        "environment" : "",
+        "object" : "AvaragesInhibition",
+        "preview" : 0,
+        "totalObservations" : 24,
+        "variables" : 5
+    },
+    "relative_order" : 11,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

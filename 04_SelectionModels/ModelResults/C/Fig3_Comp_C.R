@@ -1,0 +1,376 @@
+#Lets clear old objects
+rm(list=ls())
+getwd()
+#and set the work directory in case we have moved around or opened another project
+setwd("~/Documents/GitHub/Andersson_etal_2021/04_SelectionModels/ModelResults/C")
+dir()
+
+#Load packages and data (not adapted)
+library(reshape2)
+library(devtools)
+library(scales)
+library(ggplot2)
+library(devtools)
+library(tidyverse)
+library(plyr)
+library(cowplot)
+
+#This whole script is a bit messy and basically only imports, values, sums up or calculates averages and ratios from models generated in earlier scripts. Several input files.
+#Note the script analyzed both the observed (alias Parallel) and DRC predicted inhibitions. Only the DRC predicted was included in the manuscript 
+
+#Import data (a bit messy)
+myData <- read.csv("Input/PRoutcomeC.csv", header=FALSE)
+head(myData)
+dim(myData)
+myData2 <- read.csv2("Input/CompExpResults.csv", header=FALSE)
+sapply(myData2, class)
+myData2$V3 <- as.numeric(as.character(myData2$V3))
+myData2$V4 <- as.numeric(as.character(myData2$V4))
+
+myData3 <- rbind(myData2, myData)
+colnames(myData3) <- c("Index", "Metal", "t", "Area")
+
+#Lets get the Selection model into one the dataframe####
+#It needs to be summed up and modified a bit
+
+#First drc bases
+myData4 <- read.csv("Input/StrainMdrc_C.csv", header=FALSE)
+colnames(myData4) <- c("Strain", "Metal", "t", "Area")
+
+#Combine TB strains biomass(Area)
+TB_strain <- subset.data.frame(myData4, grepl("TB", myData4$Strain))
+TB_strain2 <- t(dcast(data = TB_strain,formula = Strain~t, fun.aggregate = sum,value.var = c("Area"), head = FALSE))
+colnames(TB_strain2) <- as.character(TB_strain2[1,])
+TB_strain2 <- TB_strain2[-1, ]
+class(TB_strain2) <- "numeric"
+dim(TB_strain2)
+TB_strain2_v <- rowSums(TB_strain2)
+
+#Combine SM strains biomass(Area)
+SM_strain <- subset.data.frame(myData4, grepl("SM", myData4$Strain))
+SM_strain2 <- t(dcast(data = SM_strain,formula = Strain~t, fun.aggregate = sum,value.var = c("Area"), head = FALSE))
+colnames(SM_strain2) <- as.character(SM_strain2[1,])
+SM_strain2 <- SM_strain2[-1, ]
+class(SM_strain2) <- "numeric"
+dim(SM_strain2)
+SM_strain2_v <- rowSums(SM_strain2)
+
+#Compute ratios and make dataframe to match other models
+SelectionM_ratios <- SM_strain2_v/TB_strain2_v
+n = 101
+Model <- rep("Selection DRC", each = n)
+Metal <- rep("C", each = n)
+t <- seq(0, 10, by=0.1)
+
+SelectionM <- as.data.frame(cbind(Model, Metal, t, SelectionM_ratios))
+colnames(SelectionM) <- c("Model", "Metal", "t", "Ratio")
+
+#Making strain specific ratios (4 x 4 comparison)
+SM_16 <- subset.data.frame(myData4, grepl("SM_GP2-4_16", myData4$Strain))
+SM_13 <- subset.data.frame(myData4, grepl("SM_GP2-4_13", myData4$Strain))
+SM_19 <- subset.data.frame(myData4, grepl("SM_GP2-4_19", myData4$Strain))
+SM_20 <- subset.data.frame(myData4, grepl("SM_GP2-4_20", myData4$Strain))
+TB_9 <- subset.data.frame(myData4, grepl("TB_GP2-4_9", myData4$Strain))
+TB_11 <- subset.data.frame(myData4, grepl("TB_GP2-4_11", myData4$Strain))
+TB_13 <- subset.data.frame(myData4, grepl("TB_GP2-4_13", myData4$Strain))
+TB_16 <- subset.data.frame(myData4, grepl("TB_GP2-4_16", myData4$Strain))
+
+SM_16_TB_9 <- SM_16$Area/TB_9$Area
+SM_16_TB_11 <- SM_16$Area/TB_11$Area
+SM_16_TB_13 <- SM_16$Area/TB_13$Area
+SM_16_TB_16 <- SM_16$Area/TB_16$Area
+
+SM_13_TB_9 <- SM_13$Area/TB_9$Area
+SM_13_TB_11 <- SM_13$Area/TB_11$Area
+SM_13_TB_13 <- SM_13$Area/TB_13$Area
+SM_13_TB_16 <- SM_13$Area/TB_16$Area
+
+SM_19_TB_9 <- SM_19$Area/TB_9$Area
+SM_19_TB_11 <- SM_19$Area/TB_11$Area
+SM_19_TB_13 <- SM_19$Area/TB_13$Area
+SM_19_TB_16 <- SM_19$Area/TB_16$Area
+
+SM_20_TB_9 <- SM_20$Area/TB_9$Area
+SM_20_TB_11 <- SM_20$Area/TB_11$Area
+SM_20_TB_13 <- SM_20$Area/TB_13$Area
+SM_20_TB_16 <- SM_20$Area/TB_16$Area
+
+Allstrain <- as.data.frame(cbind(t, SM_16_TB_9, SM_16_TB_11, SM_16_TB_13, SM_16_TB_16,
+                                 SM_13_TB_9, SM_13_TB_11, SM_13_TB_13, SM_13_TB_16,
+                                 SM_19_TB_9, SM_19_TB_11, SM_19_TB_13, SM_19_TB_16,
+                                 SM_20_TB_9, SM_20_TB_11, SM_20_TB_13, SM_20_TB_16))
+
+Allstrain <- melt(Allstrain, id.var = "t")
+#Done!
+
+#Repeat for parallel bases model####
+
+myData5 <- read.csv("Input/StrainMO_C.csv", header=FALSE, sep = ",")
+head(myData5)
+colnames(myData5) <- c("Strain", "Metal", "t", "Area")
+
+#Combine TB strains biomass(Area)
+TB_strain3 <- subset.data.frame(myData5, grepl("TB", myData5$Strain))
+TB_strain4 <- t(dcast(data = TB_strain3,formula = Strain~t, fun.aggregate = sum,value.var = c("Area"), head = FALSE))
+colnames(TB_strain4) <- as.character(TB_strain4[1,])
+TB_strain4 <- TB_strain4[-1, ]
+class(TB_strain4) <- "numeric"
+dim(TB_strain4)
+TB_strain4_v <- rowSums(TB_strain4)
+
+#Combine SM strains biomass(Area)
+SM_strain3 <- subset.data.frame(myData5, grepl("SM", myData5$Strain))
+SM_strain4 <- t(dcast(data = SM_strain3,formula = Strain~t, fun.aggregate = sum,value.var = c("Area"), head = FALSE))
+colnames(SM_strain4) <- as.character(SM_strain4[1,])
+SM_strain4 <- SM_strain4[-1, ]
+class(SM_strain4) <- "numeric"
+dim(SM_strain4)
+SM_strain4_v <- rowSums(SM_strain4)
+
+#Compute ratios and make dataframe to match other models
+SelectionMO_ratios <- SM_strain4_v/TB_strain4_v
+n = 101
+Model <- rep("Selection Parallel", each = n)
+Metal <- rep("C", each = n)
+t <- seq(0, 10, by=0.1)
+
+SelectionMO <- as.data.frame(cbind(Model, Metal, t, SelectionMO_ratios))
+colnames(SelectionMO) <- c("Model", "Metal", "t", "Ratio")
+
+
+#Now calculate prediction using species averages####
+
+#Grab only C data
+
+myData3$Metal<- recode_factor(myData3$Metal, 
+                              C = "Control")
+C <- subset.data.frame(myData3, grepl("Control", myData3$Metal))
+C
+
+#Plot data to make sure it looks ok
+ggplot(data = C, aes(x = t, y = Area)) +
+  geom_point() + facet_grid(Index ~ .) +
+  scale_y_continuous(trans = "log10") #change the scale on y axis
+
+#Then we need to make ratios for the two species...
+
+C <- separate(data = C, col = Index, into =c("Species", "Model"), sep = "_", remove = TRUE, convert = FALSE)
+C
+
+C_SM <- subset.data.frame(C, grepl("SM", C$Species))
+C_TB <- subset.data.frame(C, grepl("TB", C$Species))
+
+#and add up all vector models####
+
+#This is dangerous and risk of misalignment must be doubled-checked (e.g. last plot)
+C_ratios <- cbind(C_SM, C_TB)
+colnames(C_ratios) <- c("Species_SM", "Model_SM", "Metal_SM", "t_SM", "Area_SM", "Species_TB", "Model_TB", "Metal_TB", "t_TB", "Area_TB")
+plot(C_ratios$t_SM~C_ratios$t_TB)
+
+#Looks ok, now we can calculate biomass ratios
+C_ratios$Ratio <- C_ratios$Area_SM/C_ratios$Area_TB
+C_ratios
+
+#lets remove the Control (growth) and change names of Models, and add selection model
+unique(C_ratios3$Model)
+#REMOVING "PRuO", PRuO = "Mean Parallel", PRuP = "Mean DRC"
+Keep <- c("Exp")
+C_ratios2 <- filter(C_ratios, Model_SM %in% Keep)
+C_ratios2$Model_SM <- recode_factor(C_ratios2$Model_SM, 
+                                     Exp = "Observation")
+C_ratios2$Species_SM <- NULL
+C_ratios2$Area_SM <- NULL
+C_ratios2$Species_TB <- NULL
+C_ratios2$Model_TB <- NULL
+C_ratios2$Metal_TB <- NULL
+C_ratios2$t_TB <- NULL
+C_ratios2$Area_TB <- NULL
+
+colnames(C_ratios2) <- c("Model", "Metal", "t", "Ratio")
+
+#REMOVING SelectionMO from plotting
+C_ratios3 <- rbind(C_ratios2, SelectionM)
+C_ratios3$t <- as.numeric(as.character(C_ratios3$t))
+C_ratios3$Ratio <- as.numeric(as.character(C_ratios3$Ratio))
+C_ratios3$Model <- recode_factor(C_ratios3$Model, 
+                                 "Selection DRC" = "Competition-selection model ")
+
+#Selection model Graph#####
+
+Fig3.A <- ggplot(C_ratios3, aes(t, Ratio)) +
+  geom_line(data=Allstrain, aes(x=t, y=value, linetype = variable, colour = "Strain-by-strain")) +
+  guides(colour=guide_legend(ncol=1), linetype=FALSE) +
+  #geom_point(mapping = aes(color = Model, shape = Model), size = 0) +
+  stat_smooth(mapping = aes(colour = Model), size = 1.5, method = 'lm', formula = y ~ poly(x,2), se= TRUE) + #Fits polynomal function to data (can be changed to lm: https://plotly.com/ggplot2/stat_smooth/) and https://stackoverflow.com/questions/31829528/specify-regression-line-intercept-r-ggplot2
+  #scale_color_brewer(palette = "Paired") +
+  geom_point(data = subset(C_ratios3, Model == "Observation"), shape = 1, size = 4) + 
+  #geom_smooth(mapping = aes(x = t_SM, y = (Ratio), color = Model_SM), method = "auto") +
+  scale_color_manual(values=c("#6aa84f", "#000000", "#cccccc"), aesthetics = c("colour", "fill"), guide=FALSE) +
+  #scale_shape_manual(values=c(19), guide=FALSE) +
+  #geom_line(mapping = aes(t_SM ~ Ratio, color = Model_SM)) +
+  #grid.force() +  # To make the grobs visible to grid editing tools
+  #grid.edit("geom_point.points", grep = TRUE, gp = gpar(lwd = 10)) + #lets see if this adjustes symbols line thickness
+  #scale_size_manual(values=c(10, 1, 1)) + #Size of symbols
+  #scale_linetype_manual(values=c(1,3,1)) +
+  #geom_errorbar(aes(ymin = X95L, ymax = X95H, width=.2, color = EC), position = position_dodge(0.3)) +
+  coord_cartesian(xlim=c(-0.1, 10.1), ylim=c(0.00005, 20000), expand = F) + #ylim=c(-10000,+10000)
+  scale_x_discrete(limits=c(0,2,4,6,8,10)) +
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) + #change the scale on y axis
+  annotation_logticks(sides = "l") + # adds linier tickmarks
+  #coord_cartesian(ylim=c(-4,4), expand = F) + #changes the y axis
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) + #adjust text tilt and possition
+  #scale_fill_manual(values=c("#000000", "#000000", "#000000")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  #theme_classic() +
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time (days)", y=("Relative Biomass (SM/TB)"), title = "A) Control") +
+  theme(plot.title = element_text(vjust = - 7, hjust = 0.1)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=25)) +
+  theme(text=(element_text(size=30))) +
+  theme(axis.text=(element_text(size=30))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=1) +
+  #stat_cor(aes(color = scientific_name), label.x = 3)
+  theme(plot.margin=unit(c(0,1,0,0.2),"cm")) +
+  theme(legend.position = c(0.5,0.15),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        #scale_fill_manual(breaks=c(3)),
+        legend.margin = margin(2, 2, 2, 2),
+        #guides(color = FALSE), #,color = FALSE, size = FALSE,
+        legend.box.background = element_rect(fill='white'),
+        legend.key = element_rect(fill = 'white', color = 'white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+print(Fig3.A)
+
+dev.copy(pdf, "Results/Fig3A.pdf")
+dev.off()
+
+##Strain selection graphs#####
+
+#assemble matrices, melt for plotting, with all strains change in relative biomass.
+StrainsO <- cbind(SM_strain4, TB_strain4)
+StrainsDrc <- cbind(SM_strain2, TB_strain2)
+
+longDataO <-melt(StrainsO)
+longDataDrc <-melt(StrainsDrc)
+sapply(longDataDrc, class)
+
+#Change names of TB_GP2-4_9 and SM_GP2-4_16 to TB_GP2-4_09 and SM_GP2-4_06
+longDataO$Var2 <- recode_factor(longDataO$Var2, 
+                                "TB_GP2-4_9" = "TB_GP2-4_09", "SM_GP2-4_16" = "SM_GP2-4_06")
+longDataO$Var2 <- as.character(as.factor(longDataO$Var2))
+
+longDataDrc$Var2 <- recode_factor(longDataDrc$Var2, 
+                                  "TB_GP2-4_9" = "TB_GP2-4_09", "SM_GP2-4_16" = "SM_GP2-4_06")
+longDataDrc$Var2 <- as.character(as.factor(longDataDrc$Var2))
+
+#generate RGB code for Green=SM
+rgb(0, 60, 0, maxColorValue=255)
+rgb(0, 120, 0, maxColorValue=255)
+rgb(0, 200, 0, maxColorValue=255)
+rgb(0, 255, 0, maxColorValue=255)
+#RGB Blue=TB
+rgb(20, 25, 100, maxColorValue=255)
+rgb(30, 50, 150, maxColorValue=255)
+rgb(40, 70, 255, maxColorValue=255)
+rgb(80, 140, 255, maxColorValue=255)
+
+FigDRC.A <- ggplot(data = longDataDrc, aes(x = Var1, y = value, fill=Var2)) + geom_area(position='fill') +
+labs (x="Time (days)", y=("Relative biomass)"), title = "A) Control") +
+theme(plot.title = element_text(vjust = - 8, hjust = 0.04)) +
+  coord_cartesian(xlim=c(0, 10), ylim=c(0, 1), expand = F) + #ylim=c(-10000,+10000)
+  scale_x_discrete(limits=c(0,2,4,6,8,10)) +
+  scale_color_manual(values=c("#00FF00", "#00C800", "#007800", "#003C00", "#508CFF",  "#2846FF", "#1E3296",  "#141964"), aesthetics = c("colour", "fill")) +
+  panel_border(colour = "black", size = 1) +
+  background_grid(major = "none", minor = "none") +# and a border around each panel
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=18)) +
+  theme(text=(element_text(size=30))) +
+  theme(axis.text=(element_text(size=30))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=1.1) +
+  #stat_cor(aes(color = scientific_name), label.x = 3)
+  theme(legend.position = c(0.75,0.77),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(10, 10, 10, 10),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+FigDRC.A
+
+dev.copy(pdf, "Results/FigDRC.A.pdf")
+dev.off()
+
+FigO.A <- ggplot(data = longDataO, aes(x = Var1, y = value, fill=Var2)) + geom_area(position='fill') +
+  labs (x="Time (days)", y=("Relative biomass)"), title = "A) Control") +
+  theme(plot.title = element_text(vjust = - 8, hjust = 0.04)) +
+  coord_cartesian(xlim=c(0, 10), ylim=c(0, 1), expand = F) + #ylim=c(-10000,+10000)
+  scale_x_discrete(limits=c(0,2,4,6,8,10)) +
+  scale_color_manual(values=c("#00FF00", "#00C800", "#007800", "#003C00", "#508CFF",  "#2846FF", "#1E3296",  "#141964"), aesthetics = c("colour", "fill")) +
+  panel_border(colour = "black", size = 1) +
+  background_grid(major = "none", minor = "none") +# and a border around each panel
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=18)) +
+  theme(text=(element_text(size=30))) +
+  theme(axis.text=(element_text(size=30))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=1.1) +
+  #stat_cor(aes(color = scientific_name), label.x = 3)
+  theme(legend.position = c(0.75,0.77),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(10, 10, 10, 10),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+FigO.A
+
+dev.copy(pdf, "Results/FigO.A.pdf")
+dev.off()
+
+#Output data####
+#Lets output the growth rate estimates from the selection models so we can plot that for all metals later
+
+#Sum strain Areal increase vs t here
+
+#We have vectors for t and Area seperate in slection models so lets use that
+
+#Drc models first, we can use dplyr's lag function in the equation
+
+RateSMdrc <- as.data.frame(cbind(t, rep("SM", each = 101), rep("Control", each = 101), (log(SM_strain2_v/lag(SM_strain2_v))/(t - lag(t)))))
+RateTBdrc <- as.data.frame(cbind(t, rep("TB", each = 101), rep("Control", each = 101), (log(TB_strain2_v/lag(TB_strain2_v))/(t - lag(t)))))                         
+RatePredDrc <- as.data.frame(rbind(RateSMdrc, RateTBdrc))
+row.names(RatePredDrc) = NULL
+RatePredDrc$t <- as.numeric(as.character(RatePredDrc$t))
+RatePredDrc$V4 <- as.numeric(as.character(RatePredDrc$V4))
+RatePredDrc$V2 <- as.factor(as.character(RatePredDrc$V2))
+plot(x = RatePredDrc$t, y = RatePredDrc$V4, col=RatePredDrc$V2)
+
+write.table(RatePredDrc, file = "Results/RatePredDrc.csv", sep = ",", col.names = FALSE, qmethod = "double")
+
+#Now Observed models model
+RateSMO <- as.data.frame(cbind(t, rep("SM", each = 101), rep("Control", each = 101), (log(SM_strain4_v/lag(SM_strain4_v))/(t - lag(t)))))
+RateTBO <- as.data.frame(cbind(t, rep("TB", each = 101), rep("Control", each = 101), (log(TB_strain4_v/lag(TB_strain4_v))/(t - lag(t)))))                        
+RatePredO <- as.data.frame(rbind(RateSMO, RateTBO))
+row.names(RatePredO) = NULL
+RatePredO$t <- as.numeric(as.character(RatePredO$t))
+RatePredO$V4 <- as.numeric(as.character(RatePredO$V4))
+RatePredO$V2 <- as.factor(as.character(RatePredO$V2))
+plot(x = RatePredO$t, y = RatePredO$V4, col=RatePredO$V2)
+
+write.table(RatePredO, file = "Results/RatePredO.csv", sep = ",", col.names = FALSE, qmethod = "double")

@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591192928785.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3550410693",
+    "id" : "1C1018ED",
+    "lastKnownWriteTime" : 1591268316,
+    "last_content_update" : 1591268316529,
+    "path" : "~/Documents/R/Competition_MS/Fig3/ModelResults/Cu/Fig3_Comp_Cu.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "331,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

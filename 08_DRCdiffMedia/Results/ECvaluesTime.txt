@@ -1,0 +1,54 @@
+
+Estimated effective doses
+
+        Estimate Std. Error    Lower    Upper
+e:1:0.5 8.485243   0.061627 8.357661 8.614772
+[1] 0.1 0.5 0.7 0.9
+
+Estimated effective doses
+
+         Estimate Std. Error   Lower   Upper
+e:1:0.05  7.41950    0.14426 7.12459 7.72661
+[1] 0.1 0.5 0.7 0.9
+
+Estimated effective doses
+
+         Estimate Std. Error   Lower   Upper
+e:1:0.95  9.15025    0.13466 8.87361 9.43551
+[1] 0.1 0.5 0.7 0.9
+
+Estimated effective doses
+
+        Estimate Std. Error    Lower    Upper
+e:1:0.5 8.720518   0.050956 8.614870 8.827461
+[1] 0.1 0.5 0.7 0.9
+
+Estimated effective doses
+
+         Estimate Std. Error   Lower   Upper
+e:1:0.05  6.92529    0.12457 6.67025 7.19007
+[1] 0.1 0.5 0.7 0.9
+
+Estimated effective doses
+
+         Estimate Std. Error    Lower    Upper
+e:1:0.95  9.92699    0.11679  9.68633 10.17363
+[1] 0.1 0.5 0.7 0.9
+
+Estimated effective doses
+
+        Estimate Std. Error    Lower    Upper
+e:1:0.5 9.016531   0.056157 8.900147 9.134437
+[1] 0.1 0.5 0.7 0.9
+
+Estimated effective doses
+
+         Estimate Std. Error   Lower   Upper
+e:1:0.05  6.59335    0.12498 6.33773 6.85928
+[1] 0.1 0.5 0.7 0.9
+
+Estimated effective doses
+
+         Estimate Std. Error    Lower    Upper
+e:1:0.95 10.75119    0.11419 10.51561 10.99205
+[1] 0.1 0.5 0.7 0.9

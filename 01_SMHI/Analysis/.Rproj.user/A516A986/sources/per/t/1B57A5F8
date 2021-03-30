@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591356488800.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "1B57A5F8",
+    "lastKnownWriteTime" : 1591298219,
+    "last_content_update" : 1591356488800,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "8036C60",
+        "caption" : "selfesteem2",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=selfesteem2&cache_key=8036C60",
+        "displayedObservations" : "72",
+        "environment" : "",
+        "object" : "selfesteem2",
+        "preview" : "0",
+        "totalObservations" : "72",
+        "variables" : "4"
+    },
+    "relative_order" : 12,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

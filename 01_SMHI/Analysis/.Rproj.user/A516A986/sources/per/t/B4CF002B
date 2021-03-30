@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591368153614.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B4CF002B",
+    "lastKnownWriteTime" : 3613349457774510086,
+    "last_content_update" : 1591368153614,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "id" : "b0042aa334e547cbae10ee8215ccf011",
+        "name" : "res.aov",
+        "title" : "res.aov"
+    },
+    "relative_order" : 16,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "object_explorer"
+}

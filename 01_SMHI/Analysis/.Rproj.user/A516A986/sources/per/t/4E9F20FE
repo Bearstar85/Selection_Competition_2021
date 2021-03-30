@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591096019733.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "402618610",
+    "id" : "4E9F20FE",
+    "lastKnownWriteTime" : 1591596691,
+    "last_content_update" : 1591596691502,
+    "path" : "~/Documents/R/Competition_MS/Supplements/SuppPlots.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "737,8",
+        "scrollLine" : "737"
+    },
+    "relative_order" : 15,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

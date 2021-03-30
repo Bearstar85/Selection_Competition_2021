@@ -1,0 +1,863 @@
+#Lets clear old objects
+rm(list=ls())
+getwd()
+#and set the work directory in case we have moved around or opened another project
+setwd("~/Documents/R/Competition_MS/Supplements")
+dir()
+
+#install.packages("datarium")
+
+#Load packages and data (not adapted)
+library(reshape2)
+#library(multtest) 
+library(lattice)
+library(devtools)
+#library(ggbiplot)
+library(plyr)
+library(scales)
+library(ggplot2)
+library(devtools)
+library(grid)
+#library(gplots)
+library(tidyverse)
+library(lubridate) # useful for working with dates
+library(cowplot) # useul for combining multiple plots
+library(ggthemes)
+library(broom)
+library(ggpubr)
+library(gridExtra)
+#library(ggpmisc)
+
+
+sessionInfo()
+#PAM####
+
+#Import data 
+PAM <- read.csv2("PAMComp.csv", header=TRUE)
+PAM$PAM <- as.numeric(as.character(PAM$PAM))
+PAM$RedBlue <- as.numeric(as.character(PAM$RedBlue))
+PAM$t <- as.numeric(as.character(PAM$t))
+
+AvaragesPAM <- ddply(PAM, c("Metal", "t"), summarise,
+                  mean = mean(PAM), sd = sd(PAM))
+sapply(AvaragesPAM, class)
+#Change order of Metal factors for plotting
+AvaragesPAM$Metal <- factor(AvaragesPAM$Metal, levels = c("Control", "Ag", "Cd", "Cu"))
+
+FigPAM <- ggplot(AvaragesPAM, aes(t, mean)) +
+  geom_point(mapping = aes(shape = Metal, color = Metal), size = 4) +
+  geom_line(mapping = aes(colour = Metal), size = 1) + #Fits polynomal function to data (can be changed to lm: https://plotly.com/ggplot2/stat_smooth/) and https://stackoverflow.com/questions/31829528/specify-regression-line-intercept-r-ggplot2
+  #scale_color_brewer(palette = "Paired") +
+  geom_errorbar(aes(ymin = (mean-sd), ymax = (mean+sd), width=.4, color = Metal), position = position_dodge(0.1)) +
+  scale_shape_manual(values=c(19, 0, 1, 2)) +
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  #geom_line(mapping = aes(t_SM ~ Ratio, color = Model_SM)) +
+  #scale_linetype_manual(values = 2) +
+  coord_cartesian(xlim=c(-0.1, 10.1), ylim=c(0, 0.7), expand = F) + #ylim=c(-10000,+10000)
+  scale_x_discrete(limits=c(0,2,4,6,8,10)) +
+  scale_y_discrete(limits=c(0,0.1,0.2,0.3,0.4,0.5, 0.6, 0.7)) +
+  #annotation_logticks(sides = "l") + # adds linier tickmarks
+  #coord_cartesian(ylim=c(-4,4), expand = F) + #changes the y axis
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) + #adjust text tilt and possition
+  #scale_fill_manual(values=c("#008000", "#2846FF", "#000000")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  #theme_classic() +
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time (days)", y=("Fv/Fm"), title = "B") +
+  theme(plot.title = element_text(vjust = - 7, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=20)) +
+  theme(text=(element_text(size=20))) +
+  theme(axis.text=(element_text(size=20))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=0.5) +
+  #stat_cor(aes(color = scientific_name), label.x = 3)
+  theme(legend.position = "none", panel.background = element_blank())
+
+
+print(FigPAM)
+
+dev.copy(pdf, "FigPAM.pdf")
+dev.off()
+
+#Lets compute avarages and plot the ratio between F0 for 470 nm excitation and 650 nm excitation
+
+AvaragesRedBlue <- ddply(PAM, c("Metal", "t"), summarise,
+                     mean = mean(RedBlue), sd = sd(RedBlue))
+write.csv(AvaragesRedBlue, "AvaragesRedBlue.csv")
+
+sapply(AvaragesRedBlue, class)
+#Change order of Metal factors for plotting
+AvaragesRedBlue$Metal <- factor(AvaragesPAM$Metal, levels = c("Control", "Ag", "Cd", "Cu"))
+
+FigRedBlue <- ggplot(AvaragesRedBlue, aes(t, mean)) +
+  geom_point(mapping = aes(shape = Metal, color = Metal), size = 4) +
+  geom_line(mapping = aes(colour = Metal), size = 1) + #Fits polynomal function to data (can be changed to lm: https://plotly.com/ggplot2/stat_smooth/) and https://stackoverflow.com/questions/31829528/specify-regression-line-intercept-r-ggplot2
+  #scale_color_brewer(palette = "Paired") +
+  geom_errorbar(aes(ymin = (mean-sd), ymax = (mean+sd), width=.4, color = Metal), position = position_dodge(0.1)) +
+  scale_shape_manual(values=c(19, 0, 1, 2)) +
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  #geom_line(mapping = aes(t_SM ~ Ratio, color = Model_SM)) +
+  #scale_linetype_manual(values = 2) +
+  coord_cartesian(xlim=c(-0.1, 10.1), ylim=c(0, 7), expand = F) + #ylim=c(-10000,+10000)
+  scale_x_discrete(limits=c(0,2,4,6,8,10)) +
+  scale_y_discrete(limits=c(0,1,2,3,4,5,6,7)) +
+  #annotation_logticks(sides = "l") + # adds linier tickmarks
+  #coord_cartesian(ylim=c(-4,4), expand = F) + #changes the y axis
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) + #adjust text tilt and possition
+  #scale_fill_manual(values=c("#008000", "#2846FF", "#000000")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  #theme_classic() +
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time (days)", y=expression(F0^{Red}/F0^{Blue}), title = "") +
+  theme(plot.title = element_text(vjust = - 7, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=20)) +
+  theme(text=(element_text(size=20))) +
+  theme(axis.text=(element_text(size=20))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=0.5) +
+  #stat_cor(aes(color = scientific_name), label.x = 3)
+  theme(legend.position = "none", panel.background = element_blank())
+
+#expression(Max~biovolume~(mm^{3}~L^{-1}))
+print(FigRedBlue)
+
+dev.copy(pdf, "FigRedBlue.pdf")
+dev.off()
+
+#Next RFU####
+
+dir()
+RFU <- read.csv2("RFUComp.csv", header=TRUE)
+RFU$RFU <- as.numeric(as.character(RFU$RFU))
+RFU$t <- as.numeric(as.character(RFU$t))
+AvaragesRFU <- ddply(RFU, c("Metal", "t"), summarise,
+                     mean = mean(RFU), sd = sd(RFU))
+sapply(AvaragesRFU, class)
+#Change order of Metal factors for plotting
+AvaragesRFU$Metal <- factor(AvaragesRFU$Metal, levels = c("Control", "Ag", "Cd", "Cu"))
+
+#Remove negative values if needed
+#AvaragesRFU$mean <- (ifelse(AvaragesRFU$mean < 0, 0.0001, AvaragesRFU$mean))
+
+FigRFU <- ggplot(AvaragesRFU, aes(t, mean)) +
+  geom_point(mapping = aes(shape = Metal, color = Metal), size = 4) +
+  geom_line(mapping = aes(colour = Metal), size = 1) + #Fits polynomal function to data (can be changed to lm: https://plotly.com/ggplot2/stat_smooth/) and https://stackoverflow.com/questions/31829528/specify-regression-line-intercept-r-ggplot2
+  #scale_color_brewer(palette = "Paired") +
+  geom_errorbar(aes(ymin = (mean-sd), ymax = (mean+sd), width=.4, color = Metal), position = position_dodge(0.1)) +
+  scale_shape_manual(values=c(19, 0, 1, 2)) +
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  #geom_line(mapping = aes(t_SM ~ Ratio, color = Model_SM)) +
+  #scale_linetype_manual(values = 2) +
+  coord_cartesian(xlim=c(-0.1, 10.1), ylim=c(0.001, 1), expand = F) + #ylim=c(-10000,+10000)
+  scale_x_discrete(limits=c(0,2,4,6,8,10)) +
+  scale_y_continuous(trans = "log10") + #change the scale on y axis
+  annotation_logticks(sides = "l") + # adds linier tickmarks
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) + #adjust text tilt and possition
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time (days)", y=("RFU"), title = "A") +
+  theme(plot.title = element_text(vjust = - 13, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=20)) +
+  theme(text=(element_text(size=20))) +
+  theme(axis.text=(element_text(size=20))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=0.5) +
+  #stat_cor(aes(color = scientific_name), label.x = 3)
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+
+
+print(FigRFU)
+
+dev.copy(pdf, "FigRFU.pdf")
+dev.off()
+
+#Next predicted growth rates based on drc####
+
+dir()
+RateMdrc <- read.csv("RateMdrc.csv", header=FALSE)
+colnames(RateMdrc) <- c("ID", "t", "Species", "Metal", "Rate")
+RateMdrc$Metal <- factor(RateMdrc$Metal, levels = c("Control", "Ag", "Cd", "Cu"))
+sapply(RateMdrc, class)
+class(RateMdrc)
+head(RateMdrc)
+#Pick apart SM and TB fro plotting
+RateMdrcTB <- subset.data.frame(RateMdrc, grepl("TB", RateMdrc$Species))
+RateMdrcSM <- subset.data.frame(RateMdrc, grepl("S", RateMdrc$Species))
+
+
+FigRateMdrcTB <- ggplot(RateMdrcTB, aes(t, Rate)) +
+  #geom_point(mapping = aes(shape = Metal, color = Metal), size = 4) +
+  geom_line(mapping = aes(colour = Metal), size = 1, method = 'lm', formula = y ~ poly(x,2), se= TRUE) + #Fits polynomal function to data (can be changed to lm: https://plotly.com/ggplot2/stat_smooth/) and https://stackoverflow.com/questions/31829528/specify-regression-line-intercept-r-ggplot2
+  #scale_color_brewer(palette = "Paired") +
+  geom_hline(yintercept = 0) +
+  #geom_errorbar(aes(ymin = (mean-sd), ymax = (mean+sd), width=.4, color = Metal), position = position_dodge(0.1)) +
+  scale_shape_manual(values=c(19, 0, 1, 2)) +
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  #geom_line(mapping = aes(t_SM ~ Ratio, color = Model_SM)) +
+  #scale_linetype_manual(values = 2) +
+  coord_cartesian(xlim=c(-0.1, 10.1), ylim=c(-0.5, 2), expand = F) + #ylim=c(-10000,+10000)
+  scale_x_discrete(limits=c(0,2,4,6,8,10)) +
+  #scale_y_continuous(trans = "log10") + #change the scale on y axis
+  #annotation_logticks(sides = "l") + # adds linier tickmarks
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) + #adjust text tilt and possition
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time (days)", y=expression("Growth Rate"~(day^{-1})), title = "D") +
+  theme(plot.title = element_text(vjust = - 13, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=30)) +
+  theme(text=(element_text(size=30))) +
+  theme(axis.text=(element_text(size=30))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=1.5) +
+  #stat_cor(aes(color = scientific_name), label.x = 3)
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+
+
+print(FigRateMdrcTB)
+
+dev.copy(pdf, "FigRateMdrcTB.pdf")
+dev.off()
+
+FigRateMdrcSM <- ggplot(RateMdrcSM, aes(t, Rate)) +
+  #geom_point(mapping = aes(shape = Metal, color = Metal), size = 4) +
+  geom_line(mapping = aes(colour = Metal), size = 1, method = 'lm', formula = y ~ poly(x,2), se= TRUE) + #Fits polynomal function to data (can be changed to lm: https://plotly.com/ggplot2/stat_smooth/) and https://stackoverflow.com/questions/31829528/specify-regression-line-intercept-r-ggplot2
+  #scale_color_brewer(palette = "Paired") +
+  geom_hline(yintercept = 0) +
+  #geom_errorbar(aes(ymin = (mean-sd), ymax = (mean+sd), width=.4, color = Metal), position = position_dodge(0.1)) +
+  scale_shape_manual(values=c(19, 0, 1, 2)) +
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  #geom_line(mapping = aes(t_SM ~ Ratio, color = Model_SM)) +
+  #scale_linetype_manual(values = 2) +
+  coord_cartesian(xlim=c(-0.1, 10.1), ylim=c(-0.5, 2), expand = F) + #ylim=c(-10000,+10000)
+  scale_x_discrete(limits=c(0,2,4,6,8,10)) +
+  #scale_y_continuous(trans = "log10") + #change the scale on y axis
+  #annotation_logticks(sides = "l") + # adds linier tickmarks
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) + #adjust text tilt and possition
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time (days)", y=expression("Growth Rate"~(day^{-1})), title = "A") +
+  theme(plot.title = element_text(vjust = - 13, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=30)) +
+  theme(text=(element_text(size=30))) +
+  theme(axis.text=(element_text(size=30))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=1.5) +
+  #stat_cor(aes(color = scientific_name), label.x = 3)
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+
+
+print(FigRateMdrcSM)
+
+dev.copy(pdf, "FigRateMdrcSM.pdf")
+dev.off()
+
+#Next predicted growth rates based on Observations####
+
+dir()
+RateMO <- read.csv("RateMO.csv", header=FALSE)
+colnames(RateMO) <- c("ID", "t", "Species", "Metal", "Rate")
+RateMO$Metal <- factor(RateMO$Metal, levels = c("Control", "Ag", "Cd", "Cu"))
+sapply(RateMO, class)
+class(RateMO)
+head(RateMO)
+#Pick apart SM and TB fro plotting
+RateMOTB <- subset.data.frame(RateMO, grepl("TB", RateMO$Species))
+RateMOSM <- subset.data.frame(RateMO, grepl("SM", RateMO$Species))
+dim(RateMOTB)
+
+FigRateMOTB <- ggplot(RateMOTB, aes(t, Rate)) +
+  #geom_point(mapping = aes(shape = Metal, color = Metal), size = 4) +
+  geom_line(mapping = aes(colour = Metal), size = 1, method = 'lm', formula = y ~ poly(x,2), se= TRUE) + #Fits polynomal function to data (can be changed to lm: https://plotly.com/ggplot2/stat_smooth/) and https://stackoverflow.com/questions/31829528/specify-regression-line-intercept-r-ggplot2
+  #scale_color_brewer(palette = "Paired") +
+  geom_hline(yintercept = 0) +
+  #geom_errorbar(aes(ymin = (mean-sd), ymax = (mean+sd), width=.4, color = Metal), position = position_dodge(0.1)) +
+  scale_shape_manual(values=c(19, 0, 1, 2)) +
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  #geom_line(mapping = aes(t_SM ~ Ratio, color = Model_SM)) +
+  #scale_linetype_manual(values = 2) +
+  coord_cartesian(xlim=c(-0.1, 10.1), ylim=c(-0.5, 2), expand = F) + #ylim=c(-10000,+10000)
+  scale_x_discrete(limits=c(0,2,4,6,8,10)) +
+  #scale_y_continuous(trans = "log10") + #change the scale on y axis
+  #annotation_logticks(sides = "l") + # adds linier tickmarks
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) + #adjust text tilt and possition
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time (days)", y=expression("Growth Rate"~(day^{-1})), title = "E") +
+  theme(plot.title = element_text(vjust = - 13, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=30)) +
+  theme(text=(element_text(size=30))) +
+  theme(axis.text=(element_text(size=30))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=1.5) +
+  #stat_cor(aes(color = scientific_name), label.x = 3)
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+
+
+print(FigRateMOTB)
+
+dev.copy(pdf, "FigRateMOTB.pdf")
+dev.off()
+
+FigRateMOSM <- ggplot(RateMOSM, aes(t, Rate)) +
+  #geom_point(mapping = aes(shape = Metal, color = Metal), size = 4) +
+  geom_line(mapping = aes(colour = Metal), size = 1, method = 'lm', formula = y ~ poly(x,2), se= TRUE) + #Fits polynomal function to data (can be changed to lm: https://plotly.com/ggplot2/stat_smooth/) and https://stackoverflow.com/questions/31829528/specify-regression-line-intercept-r-ggplot2
+  #scale_color_brewer(palette = "Paired") +
+  geom_hline(yintercept = 0) +
+  #geom_errorbar(aes(ymin = (mean-sd), ymax = (mean+sd), width=.4, color = Metal), position = position_dodge(0.1)) +
+  scale_shape_manual(values=c(19, 0, 1, 2)) +
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  #geom_line(mapping = aes(t_SM ~ Ratio, color = Model_SM)) +
+  #scale_linetype_manual(values = 2) +
+  coord_cartesian(xlim=c(-0.1, 10.1), ylim=c(-0.5, 2), expand = F) + #ylim=c(-10000,+10000)
+  scale_x_discrete(limits=c(0,2,4,6,8,10)) +
+  #scale_y_continuous(trans = "log10") + #change the scale on y axis
+  #annotation_logticks(sides = "l") + # adds linier tickmarks
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) + #adjust text tilt and possition
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time (days)", y=expression("Growth Rate"~(day^{-1})), title = "B") +
+  theme(plot.title = element_text(vjust = - 13, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=30)) +
+  theme(text=(element_text(size=30))) +
+  theme(axis.text=(element_text(size=30))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=1.5) +
+  #stat_cor(aes(color = scientific_name), label.x = 3)
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+
+
+print(FigRateMOSM)
+
+dev.copy(pdf, "FigRateMOSM.pdf")
+dev.off()
+
+#Finaly obsorved growth rates left####
+
+dir()
+#Import data 
+RateO <- read.csv2("GrowthRateComp.csv", header=TRUE)
+head(RateO)
+sapply(RateO, class)
+
+RateO$Growth <- as.numeric(as.character(RateO$Growth))
+RateO$Inhibition <- as.numeric(as.character(RateO$Inhibition))
+RateO$RateRelativeSM <- as.numeric(as.character(RateO$RateRelativeSM))
+
+AvaragesRateO <- ddply(RateO, c("Timepoint", "Metal", "Species"), summarise,
+                     mean = mean(Growth), sd = sd(Growth))
+
+#I want the avarage and Sd of inhibition for a table
+AvaragesInhibition <- ddply(RateO, c("Timepoint", "Metal", "Species"), summarise,
+                       mean = mean(Inhibition), sd = sd(Inhibition))
+
+write.csv(AvaragesInhibition, 'AvaragesInhibition.csv')
+
+                       #Change order of Metal factors for plotting
+RateO$Metal <- factor(RateO$Metal, levels = c("C", "Ag", "Cd", "Cu"))
+
+#seperate species
+RateOTB <- subset.data.frame(RateO, grepl("TB", RateO$Species))
+RateOSM <- subset.data.frame(RateO, grepl("SM", RateO$Species))
+sapply(RateOTB, class)
+#Change order of Metal factors for plotting
+
+FigRateOTB <- ggplot(RateOTB, aes(Timepoint, Growth)) +
+  geom_boxplot(mapping = aes(color = Metal)) + #mapping = aes(color = Metal), size = 4
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  coord_cartesian(ylim=c(-0.5, 2), expand = F) + #ylim=c(-10000,+10000)
+  #scale_y_discrete(limits=c(0,0.1,0.2,0.3,0.4,0.5, 0.6, 0.7)) +
+  #scale_fill_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time Range",  y=expression("Growth Rate"~(day^{-1})), title = "F") +
+  theme(plot.title = element_text(vjust = - 14, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=20)) +
+  theme(text=(element_text(size=20))) +
+  theme(axis.text=(element_text(size=20))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=0.5) +
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+
+
+print(FigRateOTB)
+
+dev.copy(pdf, "FigRateOTB.pdf")
+dev.off()
+
+FigRateOSM <- ggplot(RateOSM, aes(Timepoint, Growth)) +
+  geom_boxplot(mapping = aes(color = Metal)) + #mapping = aes(color = Metal), size = 4
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  coord_cartesian(ylim=c(-0.5, 2), expand = F) + #ylim=c(-10000,+10000)
+  #scale_y_discrete(limits=c(0,0.1,0.2,0.3,0.4,0.5, 0.6, 0.7)) +
+  #scale_fill_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time Range",  y=expression("Growth Rate"~(day^{-1})), title = "C") +
+  theme(plot.title = element_text(vjust = - 14, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=20)) +
+  theme(text=(element_text(size=20))) +
+  theme(axis.text=(element_text(size=20))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=0.5) +
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+
+
+print(FigRateOSM)
+
+dev.copy(pdf, "FigRateOSM.pdf")
+dev.off()
+
+#Some variations on growth plots: first inhibition####
+
+FigInhOTB <- ggplot(RateOTB, aes(Timepoint, Inhibition)) +
+  geom_boxplot(mapping = aes(color = Metal)) + #mapping = aes(color = Metal), size = 4
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  coord_cartesian(ylim=c(-0.1, 1.5), expand = F) + #ylim=c(-10000,+10000)
+  geom_hline(yintercept = 0) +
+  #scale_y_discrete(limits=c(0,0.1,0.2,0.3,0.4,0.5, 0.6, 0.7)) +
+  #scale_fill_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time Range",  y=expression("Inhibition of Growth"), title = "B") +
+  theme(plot.title = element_text(vjust = - 14, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=20)) +
+  theme(text=(element_text(size=20))) +
+  theme(axis.text=(element_text(size=20))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=0.5) +
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+
+
+print(FigInhOTB)
+
+dev.copy(pdf, "FigInhOTB.pdf")
+dev.off()
+
+FigInhOSM <- ggplot(RateOSM, aes(Timepoint, Inhibition)) +
+  geom_boxplot(mapping = aes(color = Metal)) + #mapping = aes(color = Metal), size = 4
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  coord_cartesian(ylim=c(-0.1, 1.5), expand = F) + #ylim=c(-10000,+10000)
+  geom_hline(yintercept = 0) +
+  #scale_y_discrete(limits=c(0,0.1,0.2,0.3,0.4,0.5, 0.6, 0.7)) +
+  #scale_fill_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time Range",  y=expression("Inhibition of Growth"), title = "B)") +
+  theme(plot.title = element_text(vjust = - 14, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=20)) +
+  theme(text=(element_text(size=20))) +
+  theme(axis.text=(element_text(size=20))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=0.5) +
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+
+
+print(FigInhOSM)
+
+dev.copy(pdf, "FigInhOSM.pdf")
+dev.off()
+
+#Growth rate relartive SM####
+
+FigRelativeOTB <- ggplot(RateOTB, aes(Timepoint, RateRelativeSM)) +
+  geom_boxplot(mapping = aes(color = Metal)) + #mapping = aes(color = Metal), size = 4
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  coord_cartesian(ylim=c(-1.1, 1.1), expand = F) + #ylim=c(-10000,+10000)
+  geom_hline(yintercept = 0) +
+  #scale_y_discrete(limits=c(0,0.1,0.2,0.3,0.4,0.5, 0.6, 0.7)) +
+  #scale_fill_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time Range",  y=expression("Growth Rate TB vs SM"~(day^{-1})), title = "B)") +
+  theme(plot.title = element_text(vjust = - 14, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=20)) +
+  theme(text=(element_text(size=20))) +
+  theme(axis.text=(element_text(size=20))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=0.5) +
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+
+
+print(FigRelativeOTB)
+
+dev.copy(pdf, "FigRelativeOTB.pdf")
+dev.off()
+
+FigRelativeOSM <- ggplot(RateOSM, aes(Timepoint, RateRelativeSM)) +
+  geom_boxplot(mapping = aes(color = Metal)) + #mapping = aes(color = Metal), size = 4
+  scale_color_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  coord_cartesian(ylim=c(-1.1, 1.1), expand = F) + #ylim=c(-10000,+10000)
+  geom_hline(yintercept = 0) +
+  #scale_y_discrete(limits=c(0,0.1,0.2,0.3,0.4,0.5, 0.6, 0.7)) +
+  #scale_fill_manual(values=c("#000000", "#828282", "#FDCC65", "#B85633")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Time Range",  y=expression("Growth Rate TB vs SM"~(day^{-1})), title = "B)") +
+  theme(plot.title = element_text(vjust = - 14, hjust = 0.04)) +
+  theme(panel.spacing = unit(0.1, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=20)) +
+  theme(text=(element_text(size=20))) +
+  theme(axis.text=(element_text(size=20))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(aspect.ratio=0.5) +
+  theme(legend.position = c("top"),
+        #legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+
+print(FigRelativeOSM)
+
+dev.copy(pdf, "FigRelativeOSM.pdf")
+dev.off()
+
+#Stats####
+
+#Some packages for ANOVA
+library(rstatix)
+library("tibble")
+#Start with Fv/Fm which need 2-way RM ANOVA
+
+head(PAM)
+sapply(PAM, class)
+PAM$id <- as.factor(as.integer(PAM$id))
+PAM$id2 <- as.factor(as.integer(PAM$id2))
+#Lets drop t0 since this is not true replicate observations
+#PAM2 <- PAM %>% drop_na
+PAM2 <- PAM
+PAM2$t <- as.factor(as.numeric(PAM2$t))
+PAM2 <- as_tibble(PAM2)
+sapply(PAM2, class)
+
+# This is the input data for a 2-way RM ANOVA
+
+PAM2 %>% group_by(Metal, t) %>% get_summary_stats(PAM, type = "mean_sd")
+
+bxp <- ggboxplot(PAM2, x = "t", y = "PAM", color = "Metal", palette = "jco")
+bxp
+
+bxpID <- ggboxplot(PAM2, x = "id", y = "PAM", color = "Metal", palette = "jco")
+bxpID
+
+#Check normality: Normality ok!
+PAM2 %>% group_by(Metal, t) %>% shapiro_test(PAM)
+
+ggqqplot(PAM2, "PAM", ggtheme = theme_bw()) +
+  facet_grid(t ~ Metal, labeller = "label_both")
+
+#Compute the 2-way RM ANOVA
+
+?anova_test
+head(PAM2)
+
+# Okey check that ther is no missing data (no)
+table(PAM2$time,PAM2$Metal,PAM2$id2)
+#Does not work anyway
+FvFm.aov <- anova_test(data = PAM2, dv = PAM, wid = id2, within = c(Metal, time))
+get_anova_table(FvFm.aov)
+#Neither does this
+PAM2 %>% anova_test(dv = PAM, wid = id2, within = c(Metal, t))
+#Or this
+FvFm.aov <- PAM2 %>% anova_test(PAM ~ Metal*t + Error(id2/(Metal*t)))
+
+#how about this (2-way anova not repeted measurments structure) That works.
+#According to https://stackoverflow.com/questions/60513384/error-in-lm-fitx-y-offset-offset-singular-ok-singular-ok-0-non
+#I schould not do repeted 2-way ANOVA, since I have not subjected the same replicate to all 4 metal treatments
+#Sounds strange but maybe there is something to that.
+FvFm.aov <- anova_test(PAM ~ Metal*time,data=PAM2)
+get_anova_table(FvFm.aov)
+
+# Pairwise comparisons between treatment groups
+FvFm.pwc <- PAM2 %>%
+  group_by(time) %>%
+  pairwise_t_test(
+    PAM ~ Metal, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+FvFm.pwc
+
+#Now the RedBlue parameter
+
+#Need to drop rows withput observations
+PAM3 <- PAM2 %>% drop_na
+
+PAM3 %>% group_by(Metal, time) %>% get_summary_stats(RedBlue, type = "mean_sd")
+
+bxp <- ggboxplot(PAM3, x = "t", y = "RedBlue", color = "Metal", palette = "jco")
+bxp
+
+bxpID <- ggboxplot(PAM2, x = "id", y = "RedBlue", color = "Metal", palette = "jco")
+bxpID
+
+#Check normality: Normality so so.
+
+PAM3 %>% group_by(Metal, t) %>% shapiro_test(RedBlue)
+
+ggqqplot(PAM3, "RedBlue", ggtheme = theme_bw()) +
+  facet_grid(t ~ Metal, labeller = "label_both")
+
+
+RedBlue.aov <- anova_test(RedBlue ~ Metal*time,data=PAM3)
+get_anova_table(RedBlue.aov)
+
+
+# Pairwise comparisons between treatment groups
+RedBlue.pwc <- PAM3 %>%
+  group_by(time) %>%
+  pairwise_t_test(
+    RedBlue ~ Metal, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+RedBlue.pwc
+
+#Procedure for non-significant two-way interaction (i.e. no time effect)
+
+##########
+#continue from here
+########
+
+#Examples!!!
+library(datarium)
+# This is the input data for a 1-way RM ANOVA
+
+# Data preparation an QC
+# Wide format
+data("selfesteem", package = "datarium")
+head(selfesteem, 3)
+
+# Gather columns t1, t2 and t3 into long format
+# Convert id and time into factor variables
+selfesteem <- selfesteem %>%
+  gather(key = "time", value = "score", t1, t2, t3) %>%
+  convert_as_factor(id, time)
+head(selfesteem, 3)
+
+selfesteem %>%
+  group_by(time) %>%
+  get_summary_stats(score, type = "mean_sd")
+
+bxp <- ggboxplot(selfesteem, x = "time", y = "score", add = "Metal")
+bxp
+
+selfesteem %>%
+  group_by(time) %>%
+  shapiro_test(score)
+
+ggqqplot(selfesteem, "score", facet.by = "time")
+
+#Computation of 1-way RM ANOVA
+res.aov <- anova_test(data = selfesteem, dv = score, wid = id, within = time)
+get_anova_table(res.aov)
+
+# Post hoc test pairwise comparisons
+pwc <- selfesteem %>%
+  pairwise_t_test(
+    score ~ time, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+pwc
+
+# Visualization: box plots with p-values
+pwc <- pwc %>% add_xy_position(x = "time")
+bxp + 
+  stat_pvalue_manual(pwc) +
+  labs(
+    subtitle = get_test_label(res.aov, detailed = TRUE),
+    caption = get_pwc_label(pwc)
+  )
+# This is the input data for a 2-way RM ANOVA
+
+set.seed(123)
+data("selfesteem2", package = "datarium")
+selfesteem2 %>% sample_n_by(treatment, size = 1)
+
+# Gather the columns t1, t2 and t3 into long format.
+# Convert id and time into factor variables
+
+selfesteem2 <- selfesteem2 %>%
+  gather(key = "time", value = "score", t1, t2, t3) %>%
+  convert_as_factor(id, time)
+# Inspect some random rows of the data by groups
+
+set.seed(123)
+selfesteem2 %>% sample_n_by(treatment, time, size = 1)
+
+selfesteem2 %>%
+  group_by(treatment, time) %>%
+  get_summary_stats(score, type = "mean_sd")
+
+bxp <- ggboxplot(
+  selfesteem2, x = "time", y = "score",
+  color = "treatment", palette = "jco"
+)
+bxp
+head(selfesteem2)
+#Check normality 
+selfesteem2 %>%
+  group_by(treatment, time) %>%
+  shapiro_test(score)
+
+ggqqplot(selfesteem2, "score", ggtheme = theme_bw()) +
+  facet_grid(time ~ treatment, labeller = "label_both")
+
+#Compute the RM 2-way ANOVA
+
+res.aov <- anova_test(data = selfesteem2, dv = score, wid = id, within = c(treatment, time)
+)
+get_anova_table(res.aov)
+
+# Effect of treatment at each time point
+one.way <- selfesteem2 %>%
+  group_by(time) %>%
+  anova_test(dv = score, wid = id, within = treatment) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+one.way
+
+# Pairwise comparisons between treatment groups
+pwc <- selfesteem2 %>%
+  group_by(time) %>%
+  pairwise_t_test(
+    score ~ treatment, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+pwc
+
+#Procedure for non-significant two-way interaction (i.e. no time effect)
+
+# comparisons for treatment variable
+selfesteem2 %>%
+  pairwise_t_test(
+    score ~ treatment, paired = TRUE, 
+    p.adjust.method = "bonferroni"
+  )
+
+# comparisons for time variable
+selfesteem2 %>%
+  pairwise_t_test(
+    score ~ time, paired = TRUE, 
+    p.adjust.method = "bonferroni"
+  )
+
+#Lets first test the flourescence data (one-way) 

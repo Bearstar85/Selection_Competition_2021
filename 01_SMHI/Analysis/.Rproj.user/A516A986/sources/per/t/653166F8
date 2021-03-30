@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591366566018.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "653166F8",
+    "lastKnownWriteTime" : 0,
+    "last_content_update" : 1591366566018,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "7FA243A2",
+        "caption" : "pwc",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=pwc&cache_key=7FA243A2",
+        "displayedObservations" : 39,
+        "environment" : "",
+        "object" : "pwc",
+        "preview" : 0,
+        "totalObservations" : 39,
+        "variables" : 11
+    },
+    "relative_order" : 15,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

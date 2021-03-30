@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591192798383.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3772347670",
+    "id" : "24FD146",
+    "lastKnownWriteTime" : 1591192796,
+    "last_content_update" : 1591192796,
+    "path" : "~/Documents/R/MethodPaper/20180910_ScriptFig5complete.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "18,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 11,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

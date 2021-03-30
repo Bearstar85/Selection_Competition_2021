@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591358608431.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B0A5D00",
+    "lastKnownWriteTime" : 3546638788782456838,
+    "last_content_update" : 1591358608431,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "9A452050",
+        "caption" : "PAM2",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=PAM2&cache_key=9A452050",
+        "displayedObservations" : "0",
+        "environment" : "",
+        "object" : "PAM2",
+        "preview" : "0",
+        "totalObservations" : "0",
+        "variables" : "5"
+    },
+    "relative_order" : 15,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

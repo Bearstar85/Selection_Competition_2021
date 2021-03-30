@@ -1,0 +1,5 @@
+"Metal",".y.","group1","group2","n1","n2","p","p.signif","p.adj","p.adj.signif"
+"1","Control","Inhibition","SM","TB",9,9,1,"ns",1,"ns"
+"2","Ag","Inhibition","SM","TB",9,9,3.69e-11,"****",3.69e-11,"****"
+"3","Cd","Inhibition","SM","TB",9,9,0.0112,"*",0.0112,"*"
+"4","Cu","Inhibition","SM","TB",9,9,0.169,"ns",0.169,"ns"

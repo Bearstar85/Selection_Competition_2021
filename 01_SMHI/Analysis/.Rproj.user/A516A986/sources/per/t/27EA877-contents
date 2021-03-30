@@ -1,0 +1,245 @@
+#Lets clear old objects
+rm(list=ls())
+getwd()
+#and set the work directory in case we have moved around or opened another project
+setwd("/Users/xanbjg/Documents/R/Competition_MS/DRC/Cu")
+dir()
+
+# loading packages containing functions. Access the functions that these contain.
+# check if you have these under packages
+# you probably don't have it so you have to install it before. Everytime I start R studio
+# I have to run these librarys. 
+################
+#packages & functions
+################
+library(drc)
+library(ggplot2)
+library(staplr)
+library(dplyr)
+
+#first create individual .csv files based on .csv containing data of all strains
+all = read.csv2("Doseresponse_all.csv")
+all$Concentration <- as.numeric(as.character(all$Concentration))
+all$Inhibition <- as.numeric(as.character(all$Inhibition))
+sapply(all, class)
+
+#grep the CU data only
+Cu <- subset.data.frame(all, grepl("Cu", all$Metal))
+
+#Transform Concentration from numeric to absolut Cu concentration
+Cu$Concentration <- (ifelse(Cu$Concentration > 0, Cu$Concentration*5*0.6285+1.359, Cu$Concentration))
+plot(Cu$Concentration)
+
+for (name in levels(Cu$Strain)){
+  #Subset data based on Running.ID
+  tmp=subset(Cu,Strain==name)
+  #Create a new filename for each strain - the folder 'Files' should already exist
+  fn=paste("Files/Doseresponse_",gsub(' ','',name), ".csv", sep='')
+  #Save the CSV file containing separate expenses data for each strain
+  write.table(tmp,fn,row.names=FALSE, sep=",")
+}
+
+
+#1. Response prediction 
+
+f<- c("SM_GP2-4_13",
+      "SM_GP2-4_16",
+      "SM_GP2-4_19",
+      "SM_GP2-4_20",
+      "TB_GP2-4_11",
+      "TB_GP2-4_13",
+      "TB_GP2-4_16",
+      "TB_GP2-4_9")
+
+f
+
+for (i in f) {
+  #loop goes through script putting 1-30 for i to run over every strain file
+  # define name of Input and Output 
+  input=paste("Files/Doseresponse_",i,".csv", sep="")
+  output=paste("PR/PR_9.72?M_",i,".csv", sep="")
+
+  
+  myData= read.csv(input, header=TRUE)
+  myData
+  #First look at the imported data
+  
+  #drm = dose-response model for error plots (change model as needed)
+  fitData= subset(myData, myData$Concentration >=0)
+  bestDoseresponse.WB = drm(Inhibition~Concentration, data = fitData, fct = W2.2())
+  bestDoseresponse.WB #give you the intercepts
+  a = coef(bestDoseresponse.WB)[1]
+  b = coef(bestDoseresponse.WB)[2]
+  
+  # predict response at specific concentration dose(x) with 95% confidence
+  Response= PR(bestDoseresponse.WB, c(9.724815803))
+  Response= predict(bestDoseresponse.WB, data.frame(dose=9.724815803, CURVE= "1"), interval = "confidence")
+  #Response= PR(bestDoseresponse.WB, c(9.724815803))
+  Response2 = t(Response)
+  
+  write.table(Response2, file = output, sep=",",  col.names=FALSE, row.names = i)
+  
+  
+}
+#"Predict" instead of PR can be used to calculate confidence intervals but did not get code to run
+# to get all predicted responses in one file go to terminal enter: copy PR_* PR_all.csv to combine to one csv file  
+# or: cd /Users/xanbjg/Documents/R/EC followed by cat *.csv > ECvalues_t0.csv
+#2. EC-values 
+
+for (i in f) {
+  
+  #loop goes through script putting 1-30 for i to run over every strain file
+  #i="RO5"
+  #i="MM"
+  # define name of Input and Output 
+  input=paste("Files/Doseresponse_",i,".csv", sep="")
+  output50=paste("EC/EC50_",i,".csv", sep="")
+  output5=paste("EC/EC5_",i,".csv", sep="")
+  output95=paste("EC/EC95_",i,".csv", sep="")
+  
+#Then make the GP-strain analysis
+#Import data, note that ofloxacin2.csv uses "C" instead of 0 as a marker for the controls
+myData2= read.csv(input, header=TRUE)
+myData2
+#First look at the imported data
+plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData2= subset(myData2, myData2$Concentration >=0)
+bestDoseresponse.WB = drm(Inhibition~Concentration, data = fitData2, fct = W2.2())
+bestDoseresponse.WB #give you the intercepts
+a = coef(bestDoseresponse.WB)[1]
+b = coef(bestDoseresponse.WB)[2]
+
+#report the EC50
+EC50=ED(bestDoseresponse.WB, respLev = 0.5, type="absolute", interval="tfls") #to get ED help file put ? in front of ED and run. 
+PLay = c(0.1, 0.5, 0.7, 0.9)
+PLay
+
+#report the EC05
+EC5=ED(bestDoseresponse.WB, respLev = 0.05, type="absolute", interval="tfls") #to get ED help file put ? in front of ED and run. 
+PLay = c(0.1, 0.5, 0.7, 0.9)
+PLay
+
+#report the EC95
+EC95=ED(bestDoseresponse.WB, respLev = 0.95, type="absolute", interval="tfls") #to get ED help file put ? in front of ED and run. 
+PLay = c(0.1, 0.5, 0.7, 0.9)
+PLay
+
+
+name50= paste(i,"0.5")
+name5= paste(i,"0.05")
+name95= paste(i,"0.95")
+
+write.table(EC50, file= output50, col.names = FALSE, row.names = name50)
+write.table(EC5, file= output5, col.names = FALSE, row.names = name5)
+write.table(EC95, file= output95, col.names = FALSE, row.names = name95)
+
+}
+
+
+
+# to get all EC values in one file go to terminal enter: copy EC* EC_all_Cu_T0.csv to combine to one csv file
+
+
+
+#3. Plot
+
+for (i in f) {
+  
+  #If you want to compare only one strain with RO5:
+  # i=x  (x=Number of strain and run without "for (i in a) {" )
+  input=paste("Files/Doseresponse_",i,".csv", sep="")
+  output=paste("Plots/Fig_",i,".pdf", sep="")
+  
+
+  #Lets plot all strain data as refrence point
+  plot(Cu$Concentration, Cu$Inhibition) #$says which speific columns you will use
+  
+  #drm = dose-response model for error plots (change model as needed)
+  fitData3= subset(Cu, Cu$Concentration >=0)
+  bestDoseresponse_all.WB = drm(Inhibition~Concentration, data = fitData3, fct = W2.2())
+  bestDoseresponse_all.WB #give you the intercepts
+  a = coef(bestDoseresponse_all.WB)[1]
+  b = coef(bestDoseresponse_all.WB)[2]
+  
+  #Then make the GP-strain analysis
+  #Import data
+  myData2= read.csv(input, header=TRUE)
+  myData2
+  #First look at the imported data
+  plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+  
+  #drm = dose-response model for error plots (change model as needed)
+  fitData2= subset(myData2, myData2$Concentration >=0)
+  bestDoseresponse_GP.WB = drm(Inhibition~Concentration, data = fitData2, fct = W2.2())
+  bestDoseresponse_GP.WB #give you the intercepts
+  a = coef(bestDoseresponse_GP.WB)[1]
+  b = coef(bestDoseresponse_GP.WB)[2]
+  
+  
+  #myData4= read.csv(input, header=TRUE, sep=",")
+  #myData4
+  #Cu
+  #myData=merge(Cu, myData4, all= TRUE)
+  
+  #Make doubble analysis: Works!
+  #myData
+  #First look at the imported data
+  #plot(myData$Concentration, myData$Inhibition) #$says which speific columns you will use
+  
+  #Fit the data using the Weibull1 model, fix the lower and upper limits
+  fitData= subset(myData, myData$Concentration >=0)
+  multi.m1 <- drm(Inhibition~Concentration, data = fitData3, Strain, fct = W2.2())
+  
+  #Choose colors to doubble plots
+  #Check ot this link for col funktion https://www.statmethods.net/advgraphs/parameters.html
+  #And http://research.stowers.org/mcm/efg/R/Color/Chart/
+  
+  #generate RGB code for Green=SM
+  rgb(0, 128, 0, maxColorValue=255)
+  
+  #RGB Blue=TB
+  rgb(40, 70, 255, maxColorValue=255)
+  
+
+
+#Now i am working on a script to make nice looking plots with aid of:
+#https://www.rdocumentation.org/packages/drc/versions/3.0-1/topics/plot.drc
+
+#YES it makes a new window for each graph but whatever
+  dev.off()
+  dev.new(width=2.5, height=2.5)
+  par(mar=c(7,7,5,5))
+  plot(bestDoseresponse_GP.WB,
+       type = "all",
+       col=c("#2846FF", "#800000"), 
+       broken = TRUE, bp = 5,   #this controls where the axis is cut
+       bcontrol = list(factor = 1.2), #= "defult", style = "gap", width = "0.02"), #this controls how the cut is made but not working yet
+       conName = "Control",
+       cex =  2, cex.axis=2, lty=c(1, 2), lwd=1, #size of: symbols, axis numbers, lines type, line thickness,  stuff
+       xlim = c(0,16), #Changes,  must be the same in the row below  
+       ylim =c(-0.2,1.2),
+       xt = c(0, 6, 8, 10, 12, 14), #Specify x numbers
+       yt = c(-0.2, 0.2, 0.6, 1), #Specify y number
+       xlab = expression("Cu concentration (" *mu ~ "M)"), line = 5, cex.lab =2,
+       ylab = "Inhibition of growth rate",
+       #legend = TRUE, legendPos = c(9, 1), legendText=c(i), cex.legend = 1.75, lwd.legend = 2,
+       #legend = FALSE, legendPos = c(1.75, 1), legendText=c("1.5h", "3h", "5h"), cex.legend = 2, lwd.legend = 2,
+       main = title(main = c(i), adj = 0.05, line = -2.5, cex.main = 2))
+  #plot(bestDoseresponse_all.WB, col = #2846FF", type = "confidence", xlim = c(7,18), lty=c(0), add = TRUE)
+  plot(bestDoseresponse_GP.WB, col = "#2846FF", type = "confidence", xlim = c(7,18), lty=c(0), add = TRUE)
+  dev.copy(pdf, output)
+  dev.off()
+  
+
+}
+warnings()
+staple_pdf(input_directory = "./Plots" , input_files = NULL, output_filepath = "Plots/Fig_all.pdf")
+
+#colors
+#TB = "#2846FF"
+#SM = "#008000"
+#control = "#800000"
+#Use for legend TB: legend = TRUE, legendPos = c(9, 0.8), legendText=c(Run_ID), cex.legend = 1.75, lwd.legend = 2,
+#Use for legend SM: legend = TRUE, legendPos = c(9, 1), legendText=c(Run_ID), cex.legend = 1.75, lwd.legend = 2,

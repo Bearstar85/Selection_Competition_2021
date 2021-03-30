@@ -1,0 +1,584 @@
+#Notes day 1####
+
+#Plankton toolbox background####
+
+#BAS biodiversitet data i Sverige, VR sponsrad. Alla biotoper. Svenska Life Watch
+
+#Nominaclatur taxonomisc hirarci baserat på algaebase.com
+
+#Biovolymer basert på klasser, HELCOME peg lista används för convertering till biovolymer, kolinnehåll etc. 
+
+#Plankton group: sätt att generera egna grupper och aggregera dem.
+
+#MAn kan räkna prover i toolbox eller så importerar man data
+
+#Metadata (metadata) kan användas för att ge prover namn, koordinater, datum, etc. 
+
+#Räkningen görs med automatiskt kalibrering för förstoring, spädningar, etc etc. Field of viewe, transect, etc kan defineras under räkning
+
+#Arter importeras från t.ex. HELCOME och kan sökas på och namn. Ganska smidigt och stavfelssäkert
+
+#23 storleksklasser för SM, 
+
+#cf betyder att bestämningen är osäker.
+
+#Import DATA to Toolbox####
+
+#Data downloaded 2019-06-05, 
+
+#1. Export Sharkweb data (internt namn på rubrikrad!!)
+#2. Import into Plankton toolbox
+#3. dataset analysis- import data (B1shark.txt)
+#4. Cleanb up tar bort data permanenet, Filter tar bort data temporärt, applicera och exportera .txt filer (add 0 to N/As)
+#5. Files: 818 sample times per group: only Skeletonema sp (SkeletonemaB1.txt), only T.baltica (TbalticaB1.txt), 
+# The rest of the species are groups according to main plankton group, diatoms, cyanos, others: (Rest_PlanctonGroupB1.txt). 
+
+#R analysis####
+
+#Lets clear the pbjects from day1
+rm(list=ls())
+getwd()
+#and set the work directory in case we have moved around or opened another project
+setwd("/Users/xanbjg/Documents/R/TB_SMabundance/namnlös mapp")
+dir()
+
+#some potentiall problems with packages 2020-04-20:
+#install.packages("dbplyr") #error needed for tydyverse
+
+#Load packages (based on Bengts recommendation)
+#install.packages("magrittr")
+library(magrittr)
+library(ggplot2)
+library(tidyverse)
+library(lubridate) # useful for working with dates
+library(cowplot) # useul for combining multiple plots
+library(scales)
+library(ggthemes)
+library(dplyr)
+library(broom)
+library(ggpubr)
+library(gridExtra)
+library(car)
+#library(ggpmisc)
+
+citation()
+sessionInfo()
+citation(package = "ggplot2")
+package.version("ggplot2", lib.loc = NULL)
+package.description("ggplot2")
+#Lets read in the data
+SM <- read.delim("SkeletonemaB1.txt")
+head(SM)
+plot(SM$sample_date, SM$value)
+dim(SM)
+
+TB <- read.delim("TbalticaB1.txt")
+head(TB)
+plot(TB$sample_date, TB$value)
+dim(TB)
+
+ALL <- read.delim("Rest_PlanctonGroupB1.txt")
+head(ALL)
+plot(ALL$sample_date, ALL$value, type = "b", col= ALL$plankton_group, legend = ALL$plankton_group,
+     ylab = "Bio-volume [mm3 L-1]", xlab = "date")
+
+plot(SM$visit_month, SM$value, type = "p", ylab = "Bio-volume [mm3 L-1]", xlab = "Month")
+#smoothScatter(ALL$sample_date, ALL$value, col= ALL$plankton_group)
+
+#Okey lets add all dataframes
+B1old <- rbind(SM,TB,ALL)
+#B1 <- rbind(SM,TB,ALL)
+dim(B1pld)
+head(B1old)
+
+#Lets also make one with only the two species
+SMTB <- rbind(SM,TB)
+
+#There are some months missing, notably in 1991, and january or February some years in the 1980s
+plot(SM$visit_year, SM$visit_month)
+plot(B1$visit_year, B1$visit_month)
+
+#we have 818 monthly observations
+dim(SM)
+
+#354 without any observed SM
+sum(SM$value == 0)
+
+#and 521 without any TB
+sum(TB$value == 0)
+
+#When are both present and do they correlate? 
+#They correlate (r2=0.34) but hard to deal with 0 values.
+plot(TB$value~SM$value)
+Slope <- lm(sqrt(TB$value)~sqrt(SM$value))
+summary(Slope)
+
+plot(sqrt(TB$value)~sqrt(SM$value))
+abline(Slope)
+
+#When they co-occure its easier to show in one graph using log transformation.
+plot((TB$value)~(SM$value), log = "xy")
+
+Slope2 <- lm(log10(TB$value+0.00001)~log10(SM$value+0.00001))
+plot(log10(TB$value+0.00001)~log10(SM$value+0.00001))
+summary(Slope2)
+abline(Slope2)
+
+#lets remove all 0 values and correlate again####
+head(SMTB)
+NoZero <- subset.data.frame(SMTB, grepl(>0, SMTB$value))
+C_TB <- subset.data.frame(C, grepl("TB", C$Species))
+#Formating####
+
+#Create dates that R can use
+#Capital Y is needed when there are four digits in the year
+sharkdate <- as.Date(B1old$sample_date, "%Y-%m-%d")
+B1old$ryear <- year(sharkdate)
+B1old$rmonth <- month(sharkdate)
+B1old$rday <- mday(sharkdate)
+
+#create dates that r can use
+B1old = B1old %>%
+  mutate(rdate = as.POSIXct(sample_date, "%Y-%m-%d", tz = 'GMT'))
+
+#this creats an column with the days of the year starting with jan 1st
+B1old$r365Day <- (B1old$rmonth-1)*30+B1old$rday
+
+plot(B1old$r365Day)
+
+#Filter out those "Other protozoa"
+
+Taxa <- levels(B1old$scientific_name)
+Taxa
+
+
+Keep <- c("Skeletonema", 
+   "Thalassiosira",
+   "Cyanobacteria",
+   "Diatoms",
+   "Dinoflagellates",
+   "Other microalgae")
+Keep
+B1old2 <- filter(B1old, scientific_name %in% Keep)
+
+dim(B1old)
+dim(B1old2)
+
+Taxa2 <- unique(B1old2$scientific_name)
+Taxa2
+
+#Change the names of groups
+#x$y -> mutate(old, new, x$y)
+
+#I need to change the names in the (not working yet!!!)####
+
+NewTaxa <- c("S. marinoi", "T. baltica", "Cyanobacteria", "Other diatoms", "Dinoflagellates", "Dinoflagellates") 
+NewTaxa
+
+#Change names to newTaxa
+B1old2 <- recode(B1old2, Skeletonema = "S. marinoi", Thalassiosira = "T. baltica", Diatoms = "Other diatoms")
+
+#Change names to newTaxa
+B1old2$scientific_name <- recode_factor(B1old2$scientific_name, "Skeletonema" = "S. marinoi",
+                                 "Thalassiosira" = "T. baltica",
+                                 "Diatoms" = "Other diatoms")
+
+#Rename
+B1 <- B1old2
+dim(B1)
+levels(B1$scientific_name)
+
+#calculate avarages per month####
+B1month <- B1 %>%
+  select(visit_month, value, scientific_name) %>%
+  group_by(visit_month, scientific_name) %>%
+  summarise(
+    yearly_mean = mean(value),
+    yearly_sd = sd(value),
+    yearly_min = min(value),
+    yearly_max = max(value),
+    number_of_samples = n(),
+    yearly_se = yearly_sd/sqrt(number_of_samples))
+
+dim(B1month)
+summary(B1month)
+head(B1month)
+
+ggplot(data = B1month) +
+  geom_area(mapping = aes(x = visit_month, y = yearly_mean, color = scientific_name, fill = scientific_name))
+#facet_wrap(~ scientific_name, nrow = 3)
+
+#calculate avarages per year####
+B1year <- B1 %>%
+  select(visit_year, value, scientific_name) %>%
+  group_by(visit_year, scientific_name) %>%
+  summarise(
+    yearly_mean = mean(value),
+    yearly_sd = sd(value),
+    yearly_min = min(value),
+    yearly_max = max(value),
+    number_of_samples = n(),
+    yearly_se = yearly_sd/sqrt(number_of_samples))
+
+dim(B1year)
+summary(B1year)
+head(B1year)
+
+ggplot(data = B1year) +
+geom_area(mapping = aes(x = visit_year, y = yearly_mean, color = scientific_name, fill = scientific_name))
+          #facet_wrap(~ scientific_name, nrow = 3)
+#Grab only SMTB
+B1SMTByear <- filter(B1year, scientific_name %in% c("S. marinoi", "T. baltica"))
+
+#Grab only diatoms
+B1diatomsyear <- filter(B1year, scientific_name %in% c("S. marinoi", "T. baltica", "Other diatoms"))
+
+ggplot(data = B1SMTByear) +
+  geom_point(mapping = aes(x = visit_year, y = yearly_mean, color = scientific_name, fill = scientific_name))+
+  geom_smooth(mapping = aes(x = visit_year, y = yearly_mean, color = scientific_name), method = "lm")
+
+#Calculate ratios####
+
+#Try this
+
+SMratio <- (SM$value/TB$value)
+plot(log10(SMratio))
+
+
+#Plotting yearly avarages####
+plot(B1$visit_month, log10(B1$value), type = "p", col = B1$scientific_name,
+     ylab = "Bio-volume [mm3 L-1]", xlab = "Month")
+
+boxplot(log10(B1$value)~B1$visit_month, col = B1$scientific_name,
+     ylab = "log10 Bio-volume [mm3 L-1]", xlab = "Month")
+
+
+#Plot the diffrent groups on log scale with panels (exludes 0 values?)
+ggplot(data = B1) + 
+  geom_point(mapping = aes(x = visit_month, y = log10(value))) + 
+  geom_smooth(mapping = aes(x = visit_month, y = log10(value))) +
+  facet_wrap(~ scientific_name, nrow = 6)
+
+#and linier scale (includes 0 values?)
+ggplot(data = B1) + 
+  geom_point(mapping = aes(x = visit_month, y = value)) + 
+  geom_smooth(mapping = aes(x = visit_month, y = value)) +
+  facet_wrap(~ scientific_name, nrow = 6)
+
+#In same graph with datapoints
+ggplot(data = B1) + 
+  geom_point(mapping = aes(x = visit_month, y = log10(value), color = scientific_name)) + 
+  geom_smooth(mapping = aes(x = visit_month, y = log10(value), color = scientific_name))
+
+ggplot(data = SM) + 
+  geom_point(mapping = aes(x = visit_month, y = log10(value), color = scientific_name)) + 
+  geom_smooth(mapping = aes(x = visit_month, y = log10(value), color = scientific_name))
+
+#Simplified geometric mean + CI
+ggplot(data = B1) + 
+  geom_smooth(mapping = aes(x = visit_month, y = log10(value), color = scientific_name))
+
+#In same graph with datapoints (linier scale)
+ggplot(data = B1) + 
+  geom_point(mapping = aes(x = visit_month, y = (value), color = scientific_name)) + 
+  geom_smooth(mapping = aes(x = visit_month, y = (value), color = scientific_name))
+
+#Simplified geometric mean + CI (linier)
+ggplot(data = B1) + 
+  geom_smooth(mapping = aes(x = visit_month, y = (value), color = scientific_name))
+
+#and change axis to log scale to include zeros?
+ggplot(data = B1) + 
+  geom_smooth(mapping = aes(x = visit_month, y = (value), color = scientific_name))
+
+#Plot the whole timeseries
+ggplot(data = B1) + 
+  geom_point(mapping = aes(x = sample_date, y = log10(value), color = scientific_name))
+
+#Ploting yearly avarages####
+#In wraping (log excludes zeros!)
+ggplot(data = B1) + 
+  geom_point(mapping = aes(x = visit_year, y = log10(value))) + 
+  geom_smooth(mapping = aes(x = visit_year, y = log10(value))) +
+  facet_wrap(~ scientific_name, nrow = 6)
+
+#In same graph with datapoints (linier include zeros)
+ggplot(data = B1) + 
+  geom_smooth(mapping = aes(x = visit_year, y = (value), color = scientific_name))
+
+#only SM and TB (linier include zeros)
+ggplot(data = SMTB) + 
+  geom_smooth(mapping = aes(x = visit_year, y = (value), color = scientific_name))
+
+#plott the whole timeseries
+ggplot(data = B1) +
+geom_point(mapping = aes(x = rdate, y = (value), color = scientific_name)) + 
+  facet_wrap(~ scientific_name, ncol = 6)
+
+ggplot(data = B1) + 
+  geom_smooth(mapping = aes(x = rdate, y = (value), color = scientific_name)) + 
+  facet_wrap(~ scientific_name, ncol = 6)
+
+#Zoom in in time
+start1984 <- ISOdatetime(1984,1,1,0,0,0, tz = "GMT")
+end1990 <- ISOdatetime(2000,12,31,0,0,0, tz = "GMT")
+
+start_end <- c(start1984,end1990)
+
+ggplot(data = B1) + 
+  geom_line(mapping = aes(x = rdate, y = (value), color = scientific_name)) + 
+  facet_wrap(~ scientific_name, ncol = 6) + 
+  xlim(start_end)
+
+#Only SMTB
+class(B1$scientific_name)
+
+B1SMTB <- filter(B1, scientific_name %in% c("S. marinoi", "T. baltica"))
+B1SMTB
+ggplot(data = B1SMTB) + 
+  geom_area(mapping = aes(x = rdate, y = (value), color = scientific_name, fill = scientific_name))+
+  xlim(start_end)
+
+
+#Lets clone data 1 month behind and ahead for smothing
+
+B1_behind <- subset.data.frame(B1, grepl("12", B1$rmonth))
+B1_ahead <- subset.data.frame(B1, grepl("-01-", B1$rdate))
+
+
+B1_behind$r365Day <- B1_behind$r365Day-365
+head(B1_behind)
+
+B1_ahead$r365Day <- B1_ahead$r365Day+365
+head(B1_ahead)
+
+
+B1_3years <- rbind(B1, B1_behind, B1_ahead)
+
+ggplot(data = B1_3years) +
+  geom_point(mapping = aes(x = r365Day, y = (value), color = scientific_name)) + 
+  facet_wrap(~ scientific_name, ncol = 6)
+
+#It still messes up the fitting between in january and december
+ggplot(data = B1_3years) + 
+  geom_smooth(mapping = aes(x = r365Day, y = (value), color = scientific_name), method = "loess") +
+  coord_cartesian(ylim=c(0,0.25), xlim=c(-30,+400))
+  #coord_cartesian(xlim=c(-3,15))
+
+#Summary graphs result####
+
+#and change axis to log scale to include zeros?
+
+start2008 <- ISOdatetime(2008,1,1,0,0,0, tz = "GMT")
+end2018 <- ISOdatetime(2017,12,31,0,0,0, tz = "GMT")
+end2015
+
+#Lets also change 0 to small number so we can view log-scale
+
+dlimit <- min(B1SMTB[,16][which(B1SMTB[,16]>0)])
+dlimit
+B1SMTB$value <- (ifelse(B1SMTB$value < dlimit, (dlimit*0.1), B1SMTB$value))
+
+#Weres the detection limit for TB (0.000122656) and SM (3.25e-05)? lower in TB due to large size
+min(TB[,16][which(TB[,16]>0)])
+min(SM[,16][which(SM[,16]>0)])
+
+#FigX.A
+FigX.a <- ggplot(B1SMTB, aes(x = rdate, y = (value), color = scientific_name)) + #fill = scientific_name
+  #geom_line(mapping =aes(linetype = scientific_name), size = 1) + 
+  geom_ribbon(mapping =aes(ymin = min(value), ymax = value, fill = scientific_name, color = scientific_name), alpha=0.4, size = 0.3) + #ymin = min(value), ymax = max(value)
+  scale_y_continuous(trans = "log10", labels = trans_format("log10", math_format(10^.x))) + #geom_ribbon or area does not work with log scales because of negative values, known bug
+  coord_cartesian(xlim=c(start2008,end2018), ylim=c(dlimit,2)) + #(xlim=c(start1990,end2010)
+  annotation_logticks(sides = "l") + # adds linier tickmarks
+  scale_color_manual(values=c("#008000", "#2846FF")) +
+  scale_fill_manual(values=c("#008000", "#2846FF")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines 
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Year", y=expression(Biovolume~(mm^{3}~L^{-1}))) +
+  theme(panel.spacing = unit(0.2, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=10)) +
+  theme(text=(element_text(size=12))) +
+  theme(axis.text=(element_text(size=12))) +
+  theme(legend.text = element_text(face = "italic")) +
+  theme(panel.background = element_blank()) +
+  theme(aspect.ratio=0.33) +
+  theme(legend.position = c(0.99, 0.99),
+        legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.key.size = unit(0.4, "cm"))
+
+print(FigX.a)
+
+#Change order of factors 
+B1_14months$scientific_name <- factor(B1_14months$scientific_name, levels = c("S. marinoi","T. baltica","Other diatoms","Cyanobacteria","Dinoflagellates","Other microalgae"))
+?geom_smooth
+#FigX.Bmonth
+FigX.Bmonth <- ggplot(data = B1) + 
+  geom_smooth(mapping = aes(x = r365Day, y = (value), color = scientific_name)) +
+  coord_cartesian(xlim=c(0,366), expand = F, ylim=c(0,0.4, expand = F)) +
+  scale_x_discrete(limits=c(0,90,180,270,360)) +
+  scale_color_manual(values=c("#008000", "#2846FF", "#000000", "#99FFCC", "#CC6600", "#A0A0A0")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines 
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Julian day", y=expression(Biovolume~(mm^{3}~L^{-1}))) +
+  theme(panel.spacing = unit(0.2, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=8)) +
+  theme(text=(element_text(size=12))) +
+  theme(axis.text=(element_text(size=12))) +
+  theme(panel.background = element_blank()) +
+  #theme(aspect.ratio=0.66) +
+  theme(legend.text = element_text(face = "italic", margin = margin(t = 0))) +
+  theme(legend.position = c(0.995, 0.995),
+        legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"),
+        legend.key.size = unit(0.5, "cm"))
+
+print(FigX.Bmonth)
+dev.off()
+
+#FigX.BmonthLog
+FigX.BmonthLog <- ggplot(data = B1) + 
+  geom_smooth(mapping = aes(x = r365Day, y = log10(value), color = scientific_name)) +
+  #coord_cartesian(xlim=c(0,366), expand = F, ylim=c(0.00001, 1)) +
+  scale_x_discrete(limits=c(0,90,180,270,360)) +
+  #scale_y_continuous(trans = "log10", labels = trans_format("log10", math_format(10^.x))) + #geom_ribbon or area does not work with log scales because of negative values, known bug
+  scale_color_manual(values=c("#008000", "#2846FF", "#000000", "#99FFCC", "#CC6600", "#A0A0A0")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines 
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Julian day", y=expression(Log10-Biovolume~(mm^{3}~L^{-1}))) +
+  theme(panel.spacing = unit(0.2, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=8)) +
+  theme(text=(element_text(size=12))) +
+  theme(axis.text=(element_text(size=12))) +
+  theme(panel.background = element_blank()) +
+  #theme(aspect.ratio=0.66) +
+  theme(legend.text = element_text(face = "italic", margin = margin(t = 0))) +
+  theme(legend.position = c(0.995, 0.995),
+        legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"),
+        legend.key.size = unit(0.5, "cm"))
+
+print(FigX.BmonthLog)
+dev.off()
+
+#FigX.C
+FigX.C <- ggplot(data = B1diatomsyear) +
+  geom_col(mapping = aes(x = visit_year, y = (yearly_max), color = scientific_name, fill = scientific_name))+
+  #geom_smooth(mapping = aes(x = visit_year, y = (yearly_mean), color = scientific_name), method = "lm") +
+  coord_cartesian(ylim=c(-0.01,4), expand = F) +
+  scale_color_manual(values=c("#000030", "#000030", "#000030")) +
+  scale_fill_manual(values=c("#008000", "#2846FF", "#000000")) +
+  background_grid(major = "none", minor = "none") + # add thin horizontal lines 
+  panel_border(colour = "black", size = 1) + # and a border around each panel
+  labs (x="Year", y=expression(Max~biovolume~(mm^{3}~L^{-1}))) +
+  theme(panel.spacing = unit(0.2, "lines")) +
+  theme(legend.title=element_blank()) +
+  theme(legend.text=element_text(size=10)) +
+  theme(text=(element_text(size=12))) +
+  theme(axis.text=(element_text(size=12))) +
+  theme(panel.background = element_blank()) +
+  theme(legend.text = element_text(face = "italic")) +
+  #theme(aspect.ratio=1.33) +
+  #stat_cor(aes(color = scientific_name), label.x = 3) +
+  theme(legend.position = c(0.995, 0.995),
+        legend.justification = c("right", "top"),
+        #legend.box.just = "right",
+        legend.margin = margin(2, 2, 2, 2),
+        legend.box.background = element_rect(fill='white'),
+        legend.background = element_blank(),
+        legend.spacing.x=unit(0, "cm"),
+        legend.spacing.y=unit(0, "cm"))
+?geom_col
+print(FigX.C)
+
+
+
+#MAke combined figure and export
+ggarrange(FigX.a,
+          ggarrange(FigX.Bmonth, FigX.C, ncol = 2,
+          labels = c("B", "C"), widths=c(0.5,0.5)),
+          nrow = 2, labels = "A"
+          )
+             
+dev.copy(pdf, "FigXv3.pdf")
+dev.off()
+
+#grid.arrange(FigX.a,                                    # bar plot spaning two columns
+# FigX.bday, FigX.C,                               # box plot and scatter plot
+#ncol = 2, nrow = 2, 
+#layout_matrix = rbind(c(1,1), c(2,4)))
+
+#These graphs supports smoothing
+
+#Almost complete dataset
+plot(B1$visit_year, B1$visit_month)
+
+ggplot(data = B1month) +
+  geom_area(mapping = aes(x = visit_month, y = yearly_mean, color = scientific_name, fill = scientific_name))
+
+ggplot(data = B1SMTB) + 
+  geom_area(mapping = aes(x = rdate, y = (value), color = scientific_name, fill = scientific_name))
+  #xlim(start_end)
+
+ggplot(data = B1SMTByear) +
+  geom_area(mapping = aes(x = visit_year, y = yearly_mean, color = scientific_name, fill = scientific_name))+
+  geom_smooth(mapping = aes(x = visit_year, y = yearly_mean, color = scientific_name), method = "lm")
+
+ggplot(data = B1SMTB) + 
+  geom_smooth(mapping = aes(x = rdate, y = (value), color = scientific_name))
+
+#Stats####
+#Grab only SM,TB, diatoms
+
+#SM p = 0.038, r2 0.12
+B1SMyear <- filter(B1year, scientific_name %in% "S. marinoi")
+YearSM<- lm(B1SMyear$visit_year~(B1SMyear$yearly_mean))
+summary(YearSM)
+plot(log10(B1SMyear$yearly_mean))
+#TB p = 0.069, R2 = 0.0
+B1TByear <- filter(B1year, scientific_name %in% "T. baltica")
+YearTB<- lm(B1TByear$visit_year~B1TByear$yearly_mean)
+summary(YearTB)
+
+#Other diatoms,  p = 
+B1Otherdiatomsyear <- filter(B1year, scientific_name %in% "Other diatoms")
+YearOther<- lm(B1Otherdiatomsyear$visit_year~B1Otherdiatomsyear$yearly_mean)
+summary(YearOther)
+
+#regression on SM/TB ratios (not yet working)
+B1TB2 <- filter(B1, scientific_name %in% "T. baltica")
+date <- as.vector(B1TB2$rdate)
+head(SMratio)
+length(SMratio)
+head(date)
+length(date)
+SMTBratio <- as.data.frame(date, SMratio)
+head(SMTBratio)
+YearRatio<- lm(date~log10(SMratio), na.action(na.omit))
+summary(YearOther)
+?lm
+YearRatio<- lm(~log10(SMratio))
+SMTBratio
+#Comments####
+
+#In think that by calculating ratios between SM and TB we can get better temporal regressions but
+#i did not finnish this analysis above (many NA/inf/0 that needs to be removed and also problem regressing vs time)
+
+

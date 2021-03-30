@@ -1,0 +1,866 @@
+######
+#Terminal commands
+
+#Some usefull pre-work scripts 
+#Merge files while removing header (then manulay add headers back to file)
+#awk 'FNR > 1' *.csv > fig5.csv
+#awk 'FNR > 1' *AG.csv > AG.csv
+
+###########
+# Standard tasks at the beginning
+###########
+
+## Houskeeping
+rm(list=ls()) #remove ALL objects 
+Sys.setenv(LANG = "en") #Let's keep stuff in English
+Sys.setlocale("LC_ALL","English")
+graphics.off()
+cat("\014") # clear console window prior to new runekeeping
+
+# loading packages containing functions. Access the functions that these contain.
+# check if you have these under packages
+# you probably don't have it so you have to install it before. Everytime I start R studio
+# I have to run these librarys. 
+################
+#packages & functions
+################
+library(drc)
+library(ggplot2)
+
+#List all possible models for curve fitting:
+getMeanFunctions()
+
+#get an updates citation
+citation()
+R.Version()
+#and the packages:
+citation(package = "drc")
+
+#First make the SM analysis
+myData3= read.csv("SMAg.csv", header=TRUE)
+myData3
+#First look at the imported data
+plot(myData3$Concentration, myData3$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData3= subset(myData3, myData3$Concentration >=0)
+bestSMAg.WB = drm(Inhibition~Concentration, data = fitData3, fct = W2.2())
+bestSMAg.WB #give you the intercepts
+a = coef(bestSMAg.WB)[1]
+b = coef(bestSMAg.WB)[2]
+
+#Then make the TB analysis
+#Import data, note that ofloxacin2.csv uses "C" instead of 0 as a marker for the controls
+myData2= read.csv("TBAg.csv", header=TRUE)
+myData2
+#First look at the imported data
+plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData2= subset(myData2, myData2$Concentration >=0)
+bestTBAg.WB = drm(Inhibition~Concentration, data = fitData2, fct = W2.2())
+bestTBAg.WB #give you the intercepts
+a = coef(bestTBAg.WB)[1]
+b = coef(bestTBAg.WB)[2]
+
+#Make doubble analysis: Works!
+myData= read.csv("Ag.csv", header=TRUE)
+myData
+#First look at the imported data
+plot(myData$Concentration, myData$Inhibition) #$says which speific columns you will use
+
+#Fit the data using the Weibull1 model, fix the lower and upper limits
+fitData= subset(myData, myData$Concentration >=0)
+multi.m1 <- drm(Inhibition~Concentration, data = fitData, Species, fct = W2.2())
+
+#Choose colors to doubble plots
+#Check ot this link for col funktion https://www.statmethods.net/advgraphs/parameters.html
+#And http://research.stowers.org/mcm/efg/R/Color/Chart/
+
+#generate RGB code for Green=SM
+rgb(0, 128, 0, maxColorValue=255)
+#RGB Blue=TB
+rgb(40, 70, 255, maxColorValue=255)
+
+#Now i am working on a script to make nice looking plots with aid of:
+#https://www.rdocumentation.org/packages/drc/versions/3.0-1/topics/plot.drc
+
+#YES it makes a new window for each graph but whatever. Automaticaly dumps pdf.
+dev.off()
+dev.new(width=2.5, height=2.5)
+par(mar=c(7,7,5,5))
+plot(multi.m1,
+     type = "all",
+     col=c("#008000", "#2846FF"), 
+     broken = TRUE, bp = 0.001, #this controls where the axis is cut
+     bcontrol = list(factor = 1.2), #this controls how the cut is madet
+     conName = "Control",
+     cex =  2, cex.axis=2, lty=c(1, 2), lwd=2, #size of: symbols, axis numbers, lines type, line thickness,  stuff
+     xlim = c(0,0.5), #Changes,  must be the same in the row below  
+     ylim =c(-0.2,1.2),
+     xt = c(0, 0.005, 0.05, 0.5), #Specify x numbers
+     yt = c(-0.2, 0.2, 0.6, 1), #Specify y number
+     xlab = expression("Concentration (" *mu ~ "M)"), line = 5, cex.lab =2,
+     ylab = "Inhibition of growth rate",
+     legend = TRUE, legendPos = c(0.3, 1.2), legendText=c("S. marinoi", "T. baltica"), cex.legend = 1.75, lwd.legend = 2,
+     main = title(main = "A) Ag", adj = 0.05, line = -2.5, cex.main = 2))
+#plot(multi.m1, data = fitData, Species, col=c("#008000", "#2846FF"), type = "confidence", xlim = c(0,4), add = TRUE)
+plot(bestSMAg.WB, col = "#008000", type = "confidence", xlim = c(0,2), lty=c(0), add = TRUE)
+plot(bestTBAg.WB, col = "#2846FF", type = "confidence", xlim = c(0,2), lty=c(0), add = TRUE)
+dev.copy(pdf, "Fig5_A.pdf")
+dev.off()
+
+################################## Next Fig
+
+
+## Houskeeping
+rm(list=ls()) #remove ALL objects 
+Sys.setenv(LANG = "en") #Let's keep stuff in English
+Sys.setlocale("LC_ALL","English")
+graphics.off()
+cat("\014") # clear console window prior to new runekeeping
+
+# loading packages containing functions. Access the functions that these contain.
+# check if you have these under packages
+# you probably don't have it so you have to install it before. Everytime I start R studio
+# I have to run these librarys. 
+################
+#packages & functions
+################
+library(drc)
+library(ggplot2)
+
+#First make the SM analysis
+myData3= read.csv("SMCd.csv", header=TRUE)
+myData3
+#First look at the imported data
+plot(myData3$Concentration, myData3$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData3= subset(myData3, myData3$Concentration >=0)
+bestSMCd.WB = drm(Inhibition~Concentration, data = fitData3, fct = W1.2())
+bestSMCd.WB #give you the intercepts
+a = coef(bestSMCd.WB)[1]
+b = coef(bestSMCd.WB)[2]
+
+#Then make the TB analysis
+#Import data, note that ofloxacin2.csv uses "C" instead of 0 as a marker for the controls
+myData2= read.csv("TBCd.csv", header=TRUE)
+myData2
+#First look at the imported data
+plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData2= subset(myData2, myData2$Concentration >=0)
+bestTBCd.WB = drm(Inhibition~Concentration, data = fitData2, fct = W1.2())
+bestTBCd.WB #give you the intercepts
+a = coef(bestTBCd.WB)[1]
+b = coef(bestTBCd.WB)[2]
+
+#Make doubble analysis: Works!
+myData= read.csv("Cd.csv", header=TRUE)
+myData
+#First look at the imported data
+plot(myData$Concentration, myData$Inhibition) #$says which speific columns you will use
+
+#Fit the data using the Weibull1 model, fix the lower and upper limits
+fitData= subset(myData, myData$Concentration >=0)
+multi.m1 <- drm(Inhibition~Concentration, data = fitData, Species, fct = W1.2())
+
+#Choose colors to doubble plots
+#Check ot this link for col funktion https://www.statmethods.net/advgraphs/parameters.html
+#And http://research.stowers.org/mcm/efg/R/Color/Chart/
+
+#generate RGB code for Green=SM
+rgb(0, 128, 0, maxColorValue=255)
+
+#RGB Blue=TB
+rgb(40, 70, 255, maxColorValue=255)
+
+#Now i am working on a script to make nice looking plots with aid of:
+#https://www.rdocumentation.org/packages/drc/versions/3.0-1/topics/plot.drc
+
+#YES it makes a new window for each graph but whatever.
+dev.off()
+dev.new(width=2.5, height=2.5)
+par(mar=c(7,7,5,5))
+plot(multi.m1,
+     type = "all",
+     col=c("#008000", "#2846FF"), 
+     broken = TRUE, bp = 0.5, #this controls where the axis is cut
+     bcontrol = list(factor = 1.2), #this controls how the cut is madet
+     conName = "Control",
+     cex =  2, cex.axis=2, lty=c(1, 2), lwd=2, #size of: symbols, axis numbers, lines type, line thickness,  stuff
+     xlim = c(0,30), #Changes,  must be the same in the row below  
+     ylim =c(-0.2,1.2),
+     xt = c(0, 1, 3, 9, 27 ), #Specify x numbers
+     yt = c(-0.2, 0.2, 0.6, 1), #Specify y number
+     xlab = expression("Concentration (" *mu ~ "M)"), line = 5, cex.lab =2,
+     ylab = "",
+     legend = TRUE, legendPos = c(0.1, 1), legendText=c("S. marinoi", "T. baltica"), cex.legend = 2, lwd.legend = 2,
+     main = title(main = "B) Cd", adj = 0.05, line = -2.5, cex.main = 2))
+plot(bestSMCd.WB, col = "#008000", type = "confidence", xlim = c(0,50), lty=c(0), add = TRUE)
+plot(bestTBCd.WB, col = "#2846FF", type = "confidence", xlim = c(0,50), lty=c(0), add = TRUE)
+dev.copy(pdf, "Fig5_B.pdf")
+dev.off()
+
+################################## Next Fig
+
+## Houskeeping
+rm(list=ls()) #remove ALL objects 
+Sys.setenv(LANG = "en") #Let's keep stuff in English
+Sys.setlocale("LC_ALL","English")
+graphics.off()
+cat("\014") # clear console window prior to new runekeeping
+
+# loading packages containing functions. Access the functions that these contain.
+# check if you have these under packages
+# you probably don't have it so you have to install it before. Everytime I start R studio
+# I have to run these librarys. 
+################
+#packages & functions
+################
+library(drc)
+library(ggplot2)
+?drc
+#First make the SM analysis
+myData3= read.csv("SMCO.csv", header=TRUE)
+myData3
+#First look at the imported data
+plot(myData3$Concentration, myData3$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData3= subset(myData3, myData3$Concentration >=0)
+bestSMCO.WB = drm(Inhibition~Concentration, data = fitData3, fct = LL.2())
+bestSMCO.WB #give you the intercepts
+a = coef(bestSMCO.WB)[1]
+b = coef(bestSMCO.WB)[2]
+
+#Then make the TB analysis
+#Import data, note that ofloxacin2.csv uses "C" instead of 0 as a marker for the controls
+myData2= read.csv("TBCO.csv", header=TRUE)
+myData2
+#First look at the imported data
+plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData2= subset(myData2, myData2$Concentration >=0)
+bestTBCO.WB = drm(Inhibition~Concentration, data = fitData2, fct = LL.2())
+bestTBCO.WB #give you the intercepts
+a = coef(bestTBCO.WB)[1]
+b = coef(bestTBCO.WB)[2]
+
+#Make doubble analysis: Works!
+myData= read.csv("CO.csv", header=TRUE)
+myData
+#First look at the imported data
+plot(myData$Concentration, myData$Inhibition) #$says which speific columns you will use
+
+#Fit the data using the Weibull1 model, fix the lower and upper limits
+fitData= subset(myData, myData$Concentration >=0)
+multi.m1 <- drm(Inhibition~Concentration, data = fitData, Species, fct = LL.2())
+
+#Choose colors to doubble plots
+#Check ot this link for col funktion https://www.statmethods.net/advgraphs/parameters.html
+#And http://research.stowers.org/mcm/efg/R/Color/Chart/
+
+#generate RGB code for Green=SM
+rgb(0, 128, 0, maxColorValue=255)
+
+#RGB Blue=TB
+rgb(40, 70, 255, maxColorValue=255)
+
+#Now i am working on a script to make nice looking plots with aid of:
+#https://www.rdocumentation.org/packages/drc/versions/3.0-1/topics/plot.drc
+
+#YES it makes a new window for each graph but whatever.
+dev.off()
+dev.new(width=2.5, height=2.5)
+par(mar=c(7,7,5,5))
+plot(multi.m1,
+     type = "all",
+     col=c("#008000", "#2846FF"), 
+     broken = TRUE, bp = 0.2, #this controls where the axis is cut
+     bcontrol = list(factor = 1.5), #this controls how the cut is madet
+     conName = "Control",
+     cex =  2, cex.axis=2, lty=c(1, 2), lwd=2, #size of: symbols, axis numbers, lines type, line thickness,  stuff
+     xlim = c(0,500), #Changes,  must be the same in the row below  
+     ylim =c(-0.2,1.2),
+     xt = c(0, 1, 10, 100), #Specify x numbers
+     yt = c(-0.2, 0.2, 0.6, 1), #Specify y number
+     xlab = expression("Concentration (" *mu ~ "M)"), line = 5, cex.lab =2,
+     ylab = "",
+     legend = TRUE, legendPos = c(0.1, 1), legendText=c("S. marinoi", "T. baltica"), cex.legend = 2, lwd.legend = 2,
+     main = title(main = "C) Co", adj = 0.05, line = -2.5, cex.main = 2))
+plot(bestSMCO.WB, col = "#008000", type = "confidence", xlim = c(0,500), lty=c(0), add = TRUE)
+plot(bestTBCO.WB, col = "#2846FF", type = "confidence", xlim = c(0,500), lty=c(0), add = TRUE)
+dev.copy(pdf, "Fig5_C.pdf")
+dev.off()
+
+################################## Next Fig
+
+## Houskeeping
+rm(list=ls()) #remove ALL objects 
+Sys.setenv(LANG = "en") #Let's keep stuff in English
+Sys.setlocale("LC_ALL","English")
+graphics.off()
+cat("\014") # clear console window prior to new runekeeping
+
+# loading packages containing functions. Access the functions that these contain.
+# check if you have these under packages
+# you probably don't have it so you have to install it before. Everytime I start R studio
+# I have to run these librarys. 
+################
+#packages & functions
+################
+library(drc)
+library(ggplot2)
+
+#First make the SM analysis
+myData3= read.csv("SMCU.csv", header=TRUE)
+myData3
+#First look at the imported data
+plot(myData3$Concentration, myData3$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData3= subset(myData3, myData3$Concentration >=0)
+bestSMCU.WB = drm(Inhibition~Concentration, data = fitData3, fct = W2.2())
+bestSMCU.WB #give you the intercepts
+a = coef(bestSMCU.WB)[1]
+b = coef(bestSMCU.WB)[2]
+
+#Then make the TB analysis
+#Import data, note that ofloxacin2.csv uses "C" instead of 0 as a marker for the controls
+myData2= read.csv("TBCU.csv", header=TRUE)
+myData2
+#First look at the imported data
+plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData2= subset(myData2, myData2$Concentration >=0)
+bestTBCU.WB = drm(Inhibition~Concentration, data = fitData2, fct = W2.2())
+bestTBCU.WB #give you the intercepts
+a = coef(bestTBCU.WB)[1]
+b = coef(bestTBCU.WB)[2]
+
+#Make doubble analysis: Works!
+myData= read.csv("CU.csv", header=TRUE)
+myData
+#First look at the imported data
+plot(myData$Concentration, myData$Inhibition) #$says which speific columns you will use
+
+#Fit the data using the Weibull1 model, fix the lower and upper limits
+fitData= subset(myData, myData$Concentration >=0)
+multi.m1 <- drm(Inhibition~Concentration, data = fitData, Species, fct = W2.2())
+?fct
+#Choose colors to doubble plots
+#Check ot this link for col funktion https://www.statmethods.net/advgraphs/parameters.html
+#And http://research.stowers.org/mcm/efg/R/Color/Chart/
+
+#generate RGB code for Green=SM
+rgb(0, 128, 0, maxColorValue=255)
+
+#RGB Blue=TB
+rgb(40, 70, 255, maxColorValue=255)
+
+#Now i am working on a script to make nice looking plots with aid of:
+#https://www.rdocumentation.org/packages/drc/versions/3.0-1/topics/plot.drc
+
+#YES it makes a new window for each graph but whatever
+dev.off()
+dev.new(width=2.5, height=2.5)
+par(mar=c(7,7,5,5))
+plot(multi.m1,
+     type = "all",
+     col=c("#008000", "#2846FF"), 
+     broken = TRUE, bp = 5, #this controls where the axis is cut
+     bcontrol = list(factor = 1.1), #this controls how the cut is madet
+     conName = "Control",
+     cex =  2, cex.axis=2, lty=c(1, 2), lwd=2, #size of: symbols, axis numbers, lines type, line thickness,  stuff
+     xlim = c(0,15), #Changes,  must be the same in the row below  
+     ylim =c(-0.2,1.2),
+     xt = c(0, 6, 8, 11, 15), #Specify x numbers
+     yt = c(-0.2, 0.2, 0.6, 1), #Specify y number
+     xlab = expression("Concentration (" *mu ~ "M)"), line = 5, cex.lab =2,
+     ylab = "Inhibition of growth rate",
+     legend = FALSE, legendPos = c(1.75, 1), legendText=c("S. marinoi", "T. baltica"), cex.legend = 2, lwd.legend = 2,
+     main = title(main = "D) Cu", adj = 0.05, line = -2.5, cex.main = 2))
+plot(bestSMCU.WB, col = "#008000", type = "confidence", xlim = c(0,15), lty=c(0), add = TRUE)
+plot(bestTBCU.WB, col = "#2846FF", type = "confidence", xlim = c(0,15), lty=c(0), add = TRUE)
+dev.copy(pdf, "Fig5_D.pdf")
+dev.off()
+
+################################## Next Fig
+
+## Houskeeping
+rm(list=ls()) #remove ALL objects 
+Sys.setenv(LANG = "en") #Let's keep stuff in English
+Sys.setlocale("LC_ALL","English")
+graphics.off()
+cat("\014") # clear console window prior to new runekeeping
+
+# loading packages containing functions. Access the functions that these contain.
+# check if you have these under packages
+# you probably don't have it so you have to install it before. Everytime I start R studio
+# I have to run these librarys. 
+################
+#packages & functions
+################
+library(drc)
+library(ggplot2)
+
+#First make the SM analysis
+myData3= read.csv("SMNI.csv", header=TRUE)
+myData3
+#First look at the imported data
+plot(myData3$Concentration, myData3$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData3= subset(myData3, myData3$Concentration >=0)
+bestSMNI.WB = drm(Inhibition~Concentration, data = fitData3, fct = LL.2())
+bestSMNI.WB #give you the intercepts
+a = coef(bestSMNI.WB)[1]
+b = coef(bestSMNI.WB)[2]
+
+#Then make the TB analysis
+#Import data, note that ofloxacin2.csv uses "C" instead of 0 as a marker for the controls
+myData2= read.csv("TBNI.csv", header=TRUE)
+myData2
+#First look at the imported data
+plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData2= subset(myData2, myData2$Concentration >=0)
+bestTBNI.WB = drm(Inhibition~Concentration, data = fitData2, fct = LL.2())
+bestTBNI.WB #give you the intercepts
+a = coef(bestTBNI.WB)[1]
+b = coef(bestTBNI.WB)[2]
+
+#Make doubble analysis: Works!
+myData= read.csv("NI.csv", header=TRUE)
+myData
+#First look at the imported data
+plot(myData$Concentration, myData$Inhibition) #$says which speific columns you will use
+
+#Fit the data using the Weibull1 model, fix the lower and upper limits
+fitData= subset(myData, myData$Concentration >=0)
+multi.m1 <- drm(Inhibition~Concentration, data = fitData, Species, fct = LL.2())
+
+#Choose colors to doubble plots
+#Check ot this link for col funktion https://www.statmethods.net/advgraphs/parameters.html
+#And http://research.stowers.org/mcm/efg/R/Color/Chart/
+
+#generate RGB code for Green=SM
+rgb(0, 128, 0, maxColorValue=255)
+
+#RGB Blue=TB
+rgb(40, 70, 255, maxColorValue=255)
+
+#Now i am working on a script to make nice looking plots with aid of:
+#https://www.rdocumentation.org/packages/drc/versions/3.0-1/topics/plot.drc
+
+#YES it makes a new window for each graph but whatever.
+dev.off()
+dev.new(width=2.5, height=2.5)
+par(mar=c(7,7,5,5))
+plot(multi.m1,
+     type = "all",
+     col=c("#008000", "#2846FF"), 
+     broken = TRUE, bp = 1, #this controls where the axis is cut
+     bcontrol = list(factor = 1.2), #this controls how the cut is madet
+     conName = "Control",
+     cex =  2, cex.axis=2, lty=c(1, 2), lwd=2, #size of: symbols, axis numbers, lines type, line thickness,  stuff
+     xlim = c(0,50), #Changes,  must be the same in the row below  
+     ylim =c(-0.2,1.2),
+     xt = c(0, 2, 10, 50), #Specify x numbers
+     yt = c(-0.2, 0.2, 0.6, 1), #Specify y number
+     xlab = expression("Concentration (" *mu ~ "M)"), line = 5, cex.lab =2,
+     ylab = "",
+     legend = TRUE, legendPos = c(0.1, 1), legendText=c("S. marinoi", "T. baltica"), cex.legend = 2, lwd.legend = 2,
+     main = title(main = "E) Ni", adj = 0.05, line = -2.5, cex.main = 2))
+plot(bestSMNI.WB, col = "#008000", type = "confidence", xlim = c(0,100), lty=c(0), add = TRUE)
+plot(bestTBNI.WB, col = "#2846FF", type = "confidence", xlim = c(0,100), lty=c(0), add = TRUE)
+dev.copy(pdf, "Fig5_E.pdf")
+dev.off()
+
+################################## Next Fig
+
+## Houskeeping
+rm(list=ls()) #remove ALL objects 
+Sys.setenv(LANG = "en") #Let's keep stuff in English
+Sys.setlocale("LC_ALL","English")
+graphics.off()
+cat("\014") # clear console window prior to new runekeeping
+
+# loading packages containing functions. Access the functions that these contain.
+# check if you have these under packages
+# you probably don't have it so you have to install it before. Everytime I start R studio
+# I have to run these librarys. 
+################
+#packages & functions
+################
+library(drc)
+library(ggplot2)
+
+#First make the SM analysis
+myData3= read.csv("SMPb.csv", header=TRUE)
+myData3
+#First look at the imported data
+plot(myData3$Concentration, myData3$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData3= subset(myData3, myData3$Concentration >=0)
+bestSMPb.WB = drm(Inhibition~Concentration, data = fitData3, fct = W2.2())
+bestSMPb.WB #give you the intercepts
+a = coef(bestSMPb.WB)[1]
+b = coef(bestSMPb.WB)[2]
+
+#Then make the TB analysis
+#Import data, note that ofloxacin2.csv uses "C" instead of 0 as a marker for the controls
+myData2= read.csv("TBPb.csv", header=TRUE)
+myData2
+#First look at the imported data
+plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData2= subset(myData2, myData2$Concentration >=0)
+bestTBPb.WB = drm(Inhibition~Concentration, data = fitData2, fct = W2.2())
+bestTBPb.WB #give you the intercepts
+a = coef(bestTBPb.WB)[1]
+b = coef(bestTBPb.WB)[2]
+
+#Make doubble analysis: Works!
+myData= read.csv("Pb.csv", header=TRUE)
+myData
+#First look at the imported data
+plot(myData$Concentration, myData$Inhibition) #$says which speific columns you will use
+
+#Fit the data using the Weibull1 model, fix the lower and upper limits
+fitData= subset(myData, myData$Concentration >=0)
+multi.m1 <- drm(Inhibition~Concentration, data = fitData, Species, fct = W2.2())
+
+#Choose colors to doubble plots
+#Check ot this link for col funktion https://www.statmethods.net/advgraphs/parameters.html
+#And http://research.stowers.org/mcm/efg/R/Color/Chart/
+
+#generate RGB code for Green=SM
+rgb(0, 128, 0, maxColorValue=255)
+
+#RGB Blue=TB
+rgb(40, 70, 255, maxColorValue=255)
+
+#Now i am working on a script to make nice looking plots with aid of:
+#https://www.rdocumentation.org/packages/drc/versions/3.0-1/topics/plot.drc
+
+#YES it makes a new window for each graph but whatever.
+dev.off()
+dev.new(width=2.5, height=2.5)
+par(mar=c(7,7,5,5))
+plot(multi.m1,
+     type = "all",
+     col=c("#008000", "#2846FF"), 
+     broken = TRUE, bp = 6, #this controls where the axis is cut
+     bcontrol = list(factor = 1.2), #this controls how the cut is made
+     conName = "Control",
+     cex =  2, cex.axis=2, lty=c(1, 2), lwd=2, #size of: symbols, axis numbers, lines type, line thickness,  stuff
+     xlim = c(0,50), #Changes,  must be the same in the row below  
+     ylim =c(-0.2,1.2),
+     xt = c(0, 10, 20, 40), #Specify x numbers
+     yt = c(-0.2, 0.2, 0.6, 1), #Specify y number
+     xlab = expression("Concentration (" *mu ~ "M)"), line = 5, cex.lab =2,
+     ylab = "",
+     legend = TRUE, legendPos = c(0.1, 1), legendText=c("S. marinoi", "T. baltica"), cex.legend = 2, lwd.legend = 2,
+     main = title(main = "F) Pb", adj = 0.05, line = -2.5, cex.main = 2))
+plot(bestSMPb.WB, col = "#008000", type = "confidence", xlim = c(6,250), lty=c(0), add = TRUE)
+plot(bestTBPb.WB, col = "#2846FF", type = "confidence", xlim = c(7,250), lty=c(0), add = TRUE)
+dev.copy(pdf, "Fig5_F.pdf")
+dev.off()
+
+################################## Next Fig
+
+## Houskeeping
+rm(list=ls()) #remove ALL objects 
+Sys.setenv(LANG = "en") #Let's keep stuff in English
+Sys.setlocale("LC_ALL","English")
+graphics.off()
+cat("\014") # clear console window prior to new runekeeping
+
+# loading packages containing functions. Access the functions that these contain.
+# check if you have these under packages
+# you probably don't have it so you have to install it before. Everytime I start R studio
+# I have to run these librarys. 
+################
+#packages & functions
+################
+library(drc)
+library(ggplot2)
+
+#First make the SM analysis
+myData3= read.csv("SMZn.csv", header=TRUE)
+myData3
+#First look at the imported data
+plot(myData3$Concentration, myData3$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData3= subset(myData3, myData3$Concentration >=0)
+bestSMZn.WB = drm(Inhibition~Concentration, data = fitData3, fct = LL.2())
+bestSMZn.WB #give you the intercepts
+a = coef(bestSMZn.WB)[1]
+b = coef(bestSMZn.WB)[2]
+
+#Then make the TB analysis
+#Import data, note that ofloxacin2.csv uses "C" instead of 0 as a marker for the controls
+myData2= read.csv("TBZn.csv", header=TRUE)
+myData2
+#First look at the imported data
+plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData2= subset(myData2, myData2$Concentration >=0)
+bestTBZn.WB = drm(Inhibition~Concentration, data = fitData2, fct = LL.2())
+bestTBZn.WB #give you the intercepts
+a = coef(bestTBZn.WB)[1]
+b = coef(bestTBZn.WB)[2]
+
+#Make doubble analysis: Works!
+myData= read.csv("Zn.csv", header=TRUE)
+myData
+#First look at the imported data
+plot(myData$Concentration, myData$Inhibition) #$says which speific columns you will use
+
+#Fit the data using the Weibull1 model, fix the lower and upper limits
+fitData= subset(myData, myData$Concentration >=0)
+multi.m1 <- drm(Inhibition~Concentration, data = fitData, Species, fct = LL.2())
+
+#Choose colors to doubble plots
+#Check ot this link for col funktion https://www.statmethods.net/advgraphs/parameters.html
+#And http://research.stowers.org/mcm/efg/R/Color/Chart/
+
+#generate RGB code for Green=SM
+rgb(0, 128, 0, maxColorValue=255)
+
+#RGB Blue=TB
+rgb(40, 70, 255, maxColorValue=255)
+
+#Now i am working on a script to make nice looking plots with aid of:
+#https://www.rdocumentation.org/packages/drc/versions/3.0-1/topics/plot.drc
+
+#YES it makes a new window for each graph but whatever.
+dev.off()
+dev.new(width=2.5, height=2.5)
+par(mar=c(7,7,5,5))
+plot(multi.m1,
+     type = "all",
+     col=c("#008000", "#2846FF"), 
+     broken = TRUE, bp = 3.5, #this controls where the axis is cut
+     bcontrol = list(factor = 1.1), #this controls how the cut is madett
+     conName = "Control",
+     cex =  2, cex.axis=2, lty=c(1, 2), lwd=2, #size of: symbols, axis numbers, lines type, line thickness,  stuff
+     xlim = c(0,15), #Changes,  must be the same in the row below  
+     ylim =c(-0.2,1.2),
+     xt = c(0, 5, 7, 10, 14), #Specify x numbers
+     yt = c(-0.2, 0.2, 0.6, 1), #Specify y number
+     xlab = expression("Concentration (" *mu ~ "M)"), line = 5, cex.lab =2,
+     ylab = "Inhibition of growth rate",
+     legend = TRUE, legendPos = c(0.1, 1), legendText=c("S. marinoi", "T. baltica"), cex.legend = 2, lwd.legend = 2,
+     main = title(main = "G) Zn", adj = 0.05, line = -2.5, cex.main = 2))
+plot(bestSMZn.WB, col = "#008000", type = "confidence", xlim = c(3.5,50), lty=c(0), add = TRUE)
+plot(bestTBZn.WB, col = "#2846FF", type = "confidence", xlim = c(3.5,50), lty=c(0), add = TRUE)
+dev.copy(pdf, "Fig5_G.pdf")
+dev.off()
+
+
+################################## Next Fig
+
+
+## Houskeeping
+rm(list=ls()) #remove ALL objects 
+Sys.setenv(LANG = "en") #Let's keep stuff in English
+Sys.setlocale("LC_ALL","English")
+graphics.off()
+cat("\014") # clear console window prior to new runekeeping
+
+# loading packages containing functions. Access the functions that these contain.
+# check if you have these under packages
+# you probably don't have it so you have to install it before. Everytime I start R studio
+# I have to run these librarys. 
+################
+#packages & functions
+################
+library(drc)
+library(ggplot2)
+
+#First make the SM analysis
+myData3= read.csv("SMControl.csv", header=TRUE)
+myData3
+#First look at the imported data
+plot(myData3$Concentration, myData3$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData3= subset(myData3, myData3$Concentration >=0)
+bestSMControl.WB = drm(Inhibition~Concentration, data = fitData3, fct = weibull1(fixed=c(NA,-0,1,NA)))
+bestSMControl.WB #give you the intercepts
+a = coef(bestSMControl.WB)[1]
+b = coef(bestSMControl.WB)[2]
+
+
+#Then make the TB analysis
+#Import data, note that ofloxacin2.csv uses "C" instead of 0 as a marker for the controls
+myData2= read.csv("TBControl.csv", header=TRUE)
+myData2
+#First look at the imported data
+plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData2= subset(myData2, myData2$Concentration >=0)
+bestTBControl.WB = drm(Inhibition~Concentration, data = fitData2, fct = weibull1(fixed=c(NA,-0,1,NA)))
+bestTBControl.WB #give you the intercepts
+a = coef(bestTBControl.WB)[1]
+b = coef(bestTBControl.WB)[2]
+
+#Make doubble analysis: Works!
+myData= read.csv("Control.csv", header=TRUE)
+myData
+#First look at the imported data
+plot(myData$Concentration, myData$Inhibition) #$says which speific columns you will use
+
+#Fit the data using the Linear Regression model, fix the lower and upper limits
+fitData= subset(myData, myData$Concentration >=0)
+multi.m1 <- drm(Inhibition~Concentration, data = fitData, Species, fct = weibull1(fixed=c(NA,-0,1,NA)))
+
+#Choose colors to doubble plots
+#Check ot this link for col funktion https://www.statmethods.net/advgraphs/parameters.html
+#And http://research.stowers.org/mcm/efg/R/Color/Chart/
+
+#generate RGB code for Green=SM
+rgb(0, 128, 0, maxColorValue=255)
+
+#RGB Blue=TB
+rgb(40, 70, 255, maxColorValue=255)
+
+#Now i am working on a script to make nice looking plots with aid of:
+#https://www.rdocumentation.org/packages/drc/versions/3.0-1/topics/plot.drc
+
+#YES it makes a new window for each graph but whatever.
+#I would like to add confidence intervals of running means to this plot but not fixed yet
+dev.off()
+dev.new(width=2.5, height=2.5)
+par(mar=c(7,7,5,5))
+plot(multi.m1,
+     type = "obs",
+     col=c("#008000", "#2846FF"), 
+     broken = TRUE, bp = 0.6, #this controls where the axis is cut
+     bcontrol = list(factor = 1.2), #this controls how the cut is madet
+     conName = "Control",
+     cex =  2, cex.axis=2, lty=c(0, 0), lwd=2, #size of: symbols, axis numbers, lines type, line thickness,  stuff
+     xlog = FALSE,
+     xlim = c(0,6), #Changes,  must be the same in the row below  
+     ylim =c(-0.2,1.2),
+     xt = c(0, 1, 2, 3, 4, 6), #Specify x numbers
+     yt = c(-0.2, 0.2, 0.6, 1), #Specify y number
+     xlab = expression ("Dilution step/plate position"), line = 5, cex.lab =2,
+     ylab = "",
+     legend = FALSE, legendPos = c(0.1, 1), legendText=c("S. marinoi", "T. baltica"), cex.legend = 2, lwd.legend = 2,
+     main = title(main = "H) Control", adj = 0.05, line = -2.5, cex.main = 2))
+#plot(myData3$Concentration, myData3$Inhibition, xlim = c(0,6), add = TRUE)# col = "#008000", abline(lm(Concentration ~ Inhibition)), xlim = c(0,6), lty=c(0), add = TRUE)
+#plot(bestTBControl.WB, col = "#2846FF", type = "confidence", xlim = c(0,6), lty=c(0), add = TRUE)
+dev.copy(pdf, "Fig5_H.pdf")
+dev.off()
+
+################################## EXTRA TB comparison
+
+## Houskeeping
+rm(list=ls()) #remove ALL objects 
+Sys.setenv(LANG = "en") #Let's keep stuff in English
+Sys.setlocale("LC_ALL","English")
+graphics.off()
+cat("\014") # clear console window prior to new runekeeping
+
+# loading packages containing functions. Access the functions that these contain.
+# check if you have these under packages
+# you probably don't have it so you have to install it before. Everytime I start R studio
+# I have to run these librarys. 
+################
+#packages & functions
+################
+library(drc)
+library(ggplot2)
+
+#First make the SM analysis
+myData3= read.csv("PBTBVG1215.csv", header=TRUE)
+myData3
+#First look at the imported data
+plot(myData3$Concentration, myData3$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData3= subset(myData3, myData3$Concentration >=0)
+bestPBTBVG1215.WB = drm(Inhibition~Concentration, data = fitData3, fct = W2.2())
+bestPBTBVG1215.WB #give you the intercepts
+a = coef(bestPBTBVG1215.WB)[1]
+b = coef(bestPBTBVG1215.WB)[2]
+
+#Then make the TB analysis
+#Import data, note that ofloxacin2.csv uses "C" instead of 0 as a marker for the controls
+myData2= read.csv("TBPb.csv", header=TRUE)
+myData2
+#First look at the imported data
+plot(myData2$Concentration, myData2$Inhibition) #$says which speific columns you will use
+
+#drm = dose-response model for error plots (change model as needed)
+fitData2= subset(myData2, myData2$Concentration >=0)
+bestTBPb.WB = drm(Inhibition~Concentration, data = fitData2, fct = W2.2())
+bestTBPb.WB #give you the intercepts
+a = coef(bestTBPb.WB)[1]
+b = coef(bestTBPb.WB)[2]
+
+#Make doubble analysis: Works!
+myData= read.csv("PBTBVG1215vsTB.csv", header=TRUE)
+myData
+#First look at the imported data
+plot(myData$Concentration, myData$Inhibition) #$says which speific columns you will use
+
+#Fit the data using the Weibull1 model, fix the lower and upper limits
+fitData= subset(myData, myData$Concentration >=0)
+multi.m1 <- drm(Inhibition~Concentration, data = fitData, Strain, fct = W2.2())
+
+#Choose colors to doubble plots
+#Check ot this link for col funktion https://www.statmethods.net/advgraphs/parameters.html
+#And http://research.stowers.org/mcm/efg/R/Color/Chart/
+
+#generate RGB code for Green=SM
+rgb(0, 128, 0, maxColorValue=255)
+
+#RGB Blue=TB
+rgb(40, 70, 255, maxColorValue=255)
+
+#Now i am working on a script to make nice looking plots with aid of:
+#https://www.rdocumentation.org/packages/drc/versions/3.0-1/topics/plot.drc
+
+#YES it makes a new window for each graph but whatever.
+dev.off()
+dev.new(width=2.5, height=2.5)
+par(mar=c(7,7,5,5))
+plot(multi.m1,
+     type = "all",
+     col=c("#008000", "#2846FF"), 
+     broken = TRUE, bp = 6, #this controls where the axis is cut
+     bcontrol = list(factor = 1.2), #this controls how the cut is made
+     conName = "Control",
+     cex =  2, cex.axis=2, lty=c(1, 2), lwd=2, #size of: symbols, axis numbers, lines type, line thickness,  stuff
+     xlim = c(0,50), #Changes,  must be the same in the row below  
+     ylim =c(-0.2,1.2),
+     xt = c(0, 10, 20, 40), #Specify x numbers
+     yt = c(-0.2, 0.2, 0.6, 1), #Specify y number
+     xlab = expression("Concentration (" *mu ~ "M)"), line = 5, cex.lab =2,
+     ylab = "",
+     legend = TRUE, legendPos = c(0.1, 1), legendText=c("VG15", "GP16"), cex.legend = 2, lwd.legend = 2,
+     main = title(main = "F) Pb", adj = 0.05, line = -2.5, cex.main = 2))
+plot(bestPBTBVG1215.WB, col = "#008000", type = "confidence", xlim = c(6,250), lty=c(0), add = TRUE)
+plot(bestTBPb.WB, col = "#2846FF", type = "confidence", xlim = c(7,250), lty=c(0), add = TRUE)
+dev.copy(pdf, "TBPB.pdf")
+dev.off()
+
+#report the EC50
+ED(bestPBTBVG1215.WB, respLev = 0.5, type="absolute", interval="delta") #to get ED help file put ? in front of ED and run. 
+PLay = c(0.1, 0.5, 0.7, 0.9)
+PLay
